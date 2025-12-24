@@ -1,0 +1,555 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix gal: <http://gallery.example.org/ontology#> .
+@prefix galu: <http://gallery.example.org/user#> .
+@prefix gali: <http://gallery.example.org/import#> .
+@prefix galmap: <http://gallery.example.org/mapping#> .
+@prefix pp: <http://gallery.example.org/photopost#> .
+
+# =============================================================================
+# PHOTOPOST IMPORT MAPPING CONFIGURATION
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Source System Definition
+# -----------------------------------------------------------------------------
+
+pp:PhotoPost
+    a gali:SourceSystem ;
+    rdfs:label "PHP PhotoPost Gallery"@en ;
+    gali:systemId "photopost" ;
+    gali:version "8.x" ;
+    gali:databaseType "mysql" ;
+    gali:tablePrefix "pp_" ;
+    gali:defaultCharset "utf8mb4" .
+
+# -----------------------------------------------------------------------------
+# Database Connection Configuration
+# -----------------------------------------------------------------------------
+
+gali:PhotoPostConnection
+    a gali:DatabaseConnection ;
+    gali:host "${PHOTOPOST_DB_HOST}" ;
+    gali:port "${PHOTOPOST_DB_PORT}" ;
+    gali:database "${PHOTOPOST_DB_NAME}" ;
+    gali:username "${PHOTOPOST_DB_USER}" ;
+    gali:password "${PHOTOPOST_DB_PASS}" ;
+    gali:charset "utf8mb4" ;
+    gali:ssl "${PHOTOPOST_DB_SSL}" .
+
+# -----------------------------------------------------------------------------
+# File System Configuration  
+# -----------------------------------------------------------------------------
+
+gali:PhotoPostFiles
+    a gali:FileSystemConfig ;
+    gali:sourcePath "${PHOTOPOST_FILES_PATH}" ;
+    gali:imageDirectory "data/500" ;
+    gali:thumbnailDirectory "data/thumbnails" ;
+    gali:mediumDirectory "data/med" ;
+    gali:originalDirectory "data/original" ;
+    gali:watermarkDirectory "data/watermark" .
+
+# =============================================================================
+# TABLE MAPPINGS
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Photos Table Mapping (pp_photos)
+# -----------------------------------------------------------------------------
+
+galmap:PhotosTableMapping
+    a galmap:TableMapping ;
+    galmap:sourceTable "pp_photos" ;
+    galmap:targetClass gal:Image ;
+    galmap:primaryKey "id" ;
+    galmap:columnMappings (
+        [
+            galmap:sourceColumn "id" ;
+            galmap:targetProperty gali:originalId ;
+            galmap:dataType xsd:string ;
+            galmap:transform "toString"
+        ]
+        [
+            galmap:sourceColumn "title" ;
+            galmap:targetProperty gal:title ;
+            galmap:dataType rdf:langString ;
+            galmap:defaultLanguage "en"
+        ]
+        [
+            galmap:sourceColumn "description" ;
+            galmap:targetProperty gal:description ;
+            galmap:dataType rdf:langString ;
+            galmap:defaultLanguage "en"
+        ]
+        [
+            galmap:sourceColumn "bigimage" ;
+            galmap:targetProperty gal:localPath ;
+            galmap:dataType xsd:string ;
+            galmap:transform "buildImagePath"
+        ]
+        [
+            galmap:sourceColumn "medimage" ;
+            galmap:targetProperty gal:thumbnailPath ;
+            galmap:dataType xsd:string ;
+            galmap:transform "buildThumbnailPath"
+        ]
+        [
+            galmap:sourceColumn "width" ;
+            galmap:targetProperty gal:width ;
+            galmap:dataType xsd:integer
+        ]
+        [
+            galmap:sourceColumn "height" ;
+            galmap:targetProperty gal:height ;
+            galmap:dataType xsd:integer
+        ]
+        [
+            galmap:sourceColumn "filesize" ;
+            galmap:targetProperty gal:fileSize ;
+            galmap:dataType xsd:integer
+        ]
+        [
+            galmap:sourceColumn "views" ;
+            galmap:targetProperty gal:viewCount ;
+            galmap:dataType xsd:integer
+        ]
+        [
+            galmap:sourceColumn "rating" ;
+            galmap:targetProperty gal:averageRating ;
+            galmap:dataType xsd:decimal ;
+            galmap:transform "normalizeRating"
+        ]
+        [
+            galmap:sourceColumn "numratings" ;
+            galmap:targetProperty gal:ratingCount ;
+            galmap:dataType xsd:integer
+        ]
+        [
+            galmap:sourceColumn "date" ;
+            galmap:targetProperty dcterms:created ;
+            galmap:dataType xsd:dateTime ;
+            galmap:transform "unixTimestampToDateTime"
+        ]
+        [
+            galmap:sourceColumn "cat" ;
+            galmap:targetProperty gal:hasCategory ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:foreignKey "galmap:CategoriesTableMapping" ;
+            galmap:foreignKeyColumn "id"
+        ]
+        [
+            galmap:sourceColumn "user" ;
+            galmap:targetProperty gal:createdBy ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:foreignKey "galmap:UsersTableMapping" ;
+            galmap:foreignKeyColumn "userid"
+        ]
+        [
+            galmap:sourceColumn "approved" ;
+            galmap:targetProperty gal:isApproved ;
+            galmap:dataType xsd:boolean ;
+            galmap:transform "intToBoolean"
+        ]
+        [
+            galmap:sourceColumn "keywords" ;
+            galmap:targetProperty gal:hasTag ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:transform "splitKeywordsToTags"
+        ]
+    ) .
+
+# -----------------------------------------------------------------------------
+# Categories Table Mapping (pp_categories)
+# -----------------------------------------------------------------------------
+
+galmap:CategoriesTableMapping
+    a galmap:TableMapping ;
+    galmap:sourceTable "pp_categories" ;
+    galmap:targetClass gal:Category ;
+    galmap:primaryKey "id" ;
+    galmap:columnMappings (
+        [
+            galmap:sourceColumn "id" ;
+            galmap:targetProperty gali:originalId ;
+            galmap:dataType xsd:string ;
+            galmap:transform "toString"
+        ]
+        [
+            galmap:sourceColumn "catname" ;
+            galmap:targetProperty rdfs:label ;
+            galmap:dataType rdf:langString ;
+            galmap:defaultLanguage "en"
+        ]
+        [
+            galmap:sourceColumn "catdesc" ;
+            galmap:targetProperty gal:description ;
+            galmap:dataType rdf:langString ;
+            galmap:defaultLanguage "en"
+        ]
+        [
+            galmap:sourceColumn "parent" ;
+            galmap:targetProperty gal:parentCategory ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:foreignKey "galmap:CategoriesTableMapping" ;
+            galmap:foreignKeyColumn "id" ;
+            galmap:nullValue "0"
+        ]
+        [
+            galmap:sourceColumn "catorder" ;
+            galmap:targetProperty gal:sortOrder ;
+            galmap:dataType xsd:integer
+        ]
+        [
+            galmap:sourceColumn "photos" ;
+            galmap:targetProperty gal:itemCount ;
+            galmap:dataType xsd:integer
+        ]
+    ) ;
+    galmap:hierarchyColumn "parent" ;
+    galmap:rootValue "0" .
+
+# -----------------------------------------------------------------------------
+# Users Table Mapping (pp_users)
+# -----------------------------------------------------------------------------
+
+galmap:UsersTableMapping
+    a galmap:TableMapping ;
+    galmap:sourceTable "pp_users" ;
+    galmap:targetClass galu:User ;
+    galmap:primaryKey "userid" ;
+    galmap:columnMappings (
+        [
+            galmap:sourceColumn "userid" ;
+            galmap:targetProperty gali:originalId ;
+            galmap:dataType xsd:string ;
+            galmap:transform "toString"
+        ]
+        [
+            galmap:sourceColumn "username" ;
+            galmap:targetProperty galu:username ;
+            galmap:dataType xsd:string
+        ]
+        [
+            galmap:sourceColumn "email" ;
+            galmap:targetProperty foaf:mbox ;
+            galmap:dataType xsd:string ;
+            galmap:transform "sanitizeEmail"
+        ]
+        [
+            galmap:sourceColumn "joindate" ;
+            galmap:targetProperty dcterms:created ;
+            galmap:dataType xsd:dateTime ;
+            galmap:transform "unixTimestampToDateTime"
+        ]
+        [
+            galmap:sourceColumn "lastvisit" ;
+            galmap:targetProperty galu:lastActive ;
+            galmap:dataType xsd:dateTime ;
+            galmap:transform "unixTimestampToDateTime"
+        ]
+        [
+            galmap:sourceColumn "photos" ;
+            galmap:targetProperty galu:photoCount ;
+            galmap:dataType xsd:integer
+        ]
+        [
+            galmap:sourceColumn "usertitle" ;
+            galmap:targetProperty galu:displayName ;
+            galmap:dataType xsd:string
+        ]
+        [
+            galmap:sourceColumn "avatar" ;
+            galmap:targetProperty galu:avatarUrl ;
+            galmap:dataType xsd:anyURI ;
+            galmap:transform "buildAvatarPath"
+        ]
+    ) .
+
+# -----------------------------------------------------------------------------
+# Comments Table Mapping (pp_comments)
+# -----------------------------------------------------------------------------
+
+galmap:CommentsTableMapping
+    a galmap:TableMapping ;
+    galmap:sourceTable "pp_comments" ;
+    galmap:targetClass gal:Comment ;
+    galmap:primaryKey "id" ;
+    galmap:columnMappings (
+        [
+            galmap:sourceColumn "id" ;
+            galmap:targetProperty gali:originalId ;
+            galmap:dataType xsd:string ;
+            galmap:transform "toString"
+        ]
+        [
+            galmap:sourceColumn "photo" ;
+            galmap:targetProperty gal:commentOn ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:foreignKey "galmap:PhotosTableMapping" ;
+            galmap:foreignKeyColumn "id"
+        ]
+        [
+            galmap:sourceColumn "userid" ;
+            galmap:targetProperty gal:commentedBy ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:foreignKey "galmap:UsersTableMapping" ;
+            galmap:foreignKeyColumn "userid"
+        ]
+        [
+            galmap:sourceColumn "username" ;
+            galmap:targetProperty gal:commentAuthorName ;
+            galmap:dataType xsd:string ;
+            galmap:fallback true
+        ]
+        [
+            galmap:sourceColumn "comment" ;
+            galmap:targetProperty gal:commentText ;
+            galmap:dataType xsd:string ;
+            galmap:transform "sanitizeHtml"
+        ]
+        [
+            galmap:sourceColumn "date" ;
+            galmap:targetProperty gal:commentDate ;
+            galmap:dataType xsd:dateTime ;
+            galmap:transform "unixTimestampToDateTime"
+        ]
+        [
+            galmap:sourceColumn "ipaddress" ;
+            galmap:targetProperty gal:commentIp ;
+            galmap:dataType xsd:string ;
+            galmap:piiField true
+        ]
+        [
+            galmap:sourceColumn "approved" ;
+            galmap:targetProperty gal:isApproved ;
+            galmap:dataType xsd:boolean ;
+            galmap:transform "intToBoolean"
+        ]
+    ) .
+
+# -----------------------------------------------------------------------------
+# Ratings Table Mapping (pp_ratings)
+# -----------------------------------------------------------------------------
+
+galmap:RatingsTableMapping
+    a galmap:TableMapping ;
+    galmap:sourceTable "pp_ratings" ;
+    galmap:targetClass gal:Rating ;
+    galmap:primaryKey "id" ;
+    galmap:columnMappings (
+        [
+            galmap:sourceColumn "id" ;
+            galmap:targetProperty gali:originalId ;
+            galmap:dataType xsd:string ;
+            galmap:transform "toString"
+        ]
+        [
+            galmap:sourceColumn "photo" ;
+            galmap:targetProperty gal:ratingOn ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:foreignKey "galmap:PhotosTableMapping" ;
+            galmap:foreignKeyColumn "id"
+        ]
+        [
+            galmap:sourceColumn "userid" ;
+            galmap:targetProperty gal:ratedBy ;
+            galmap:dataType owl:ObjectProperty ;
+            galmap:foreignKey "galmap:UsersTableMapping" ;
+            galmap:foreignKeyColumn "userid"
+        ]
+        [
+            galmap:sourceColumn "rating" ;
+            galmap:targetProperty gal:ratingValue ;
+            galmap:dataType xsd:decimal ;
+            galmap:transform "normalizeRating"
+        ]
+        [
+            galmap:sourceColumn "date" ;
+            galmap:targetProperty gal:ratingDate ;
+            galmap:dataType xsd:dateTime ;
+            galmap:transform "unixTimestampToDateTime"
+        ]
+    ) .
+
+# =============================================================================
+# TRANSFORM FUNCTIONS
+# =============================================================================
+
+galmap:toString
+    a galmap:TransformFunction ;
+    galmap:functionName "toString" ;
+    galmap:description "Convert value to string"@en ;
+    galmap:implementation "String(value)" .
+
+galmap:intToBoolean
+    a galmap:TransformFunction ;
+    galmap:functionName "intToBoolean" ;
+    galmap:description "Convert integer (0/1) to boolean"@en ;
+    galmap:implementation "Boolean(parseInt(value))" .
+
+galmap:unixTimestampToDateTime
+    a galmap:TransformFunction ;
+    galmap:functionName "unixTimestampToDateTime" ;
+    galmap:description "Convert Unix timestamp to ISO 8601 datetime"@en ;
+    galmap:implementation "new Date(parseInt(value) * 1000).toISOString()" .
+
+galmap:normalizeRating
+    a galmap:TransformFunction ;
+    galmap:functionName "normalizeRating" ;
+    galmap:description "Normalize rating to 0-5 scale"@en ;
+    galmap:inputMin 0 ;
+    galmap:inputMax 10 ;
+    galmap:outputMin 0 ;
+    galmap:outputMax 5 ;
+    galmap:implementation "(parseFloat(value) / 2).toFixed(2)" .
+
+galmap:buildImagePath
+    a galmap:TransformFunction ;
+    galmap:functionName "buildImagePath" ;
+    galmap:description "Build full image path from filename"@en ;
+    galmap:pathTemplate "${BASE_URL}/media/images/{category}/{filename}" .
+
+galmap:buildThumbnailPath
+    a galmap:TransformFunction ;
+    galmap:functionName "buildThumbnailPath" ;
+    galmap:description "Build thumbnail path from filename"@en ;
+    galmap:pathTemplate "${BASE_URL}/media/thumbnails/{category}/{filename}" .
+
+galmap:buildAvatarPath
+    a galmap:TransformFunction ;
+    galmap:functionName "buildAvatarPath" ;
+    galmap:description "Build avatar URL from avatar filename"@en ;
+    galmap:pathTemplate "${BASE_URL}/media/avatars/{filename}" ;
+    galmap:defaultValue "${BASE_URL}/media/avatars/default.png" .
+
+galmap:sanitizeHtml
+    a galmap:TransformFunction ;
+    galmap:functionName "sanitizeHtml" ;
+    galmap:description "Sanitize HTML content, remove dangerous tags"@en ;
+    galmap:allowedTags ("p" "br" "strong" "em" "a" "ul" "ol" "li") ;
+    galmap:stripAttributes ("onclick" "onerror" "onload" "style") .
+
+galmap:sanitizeEmail
+    a galmap:TransformFunction ;
+    galmap:functionName "sanitizeEmail" ;
+    galmap:description "Validate and lowercase email"@en ;
+    galmap:implementation "value.toLowerCase().trim()" .
+
+galmap:splitKeywordsToTags
+    a galmap:TransformFunction ;
+    galmap:functionName "splitKeywordsToTags" ;
+    galmap:description "Split comma-separated keywords into individual tags"@en ;
+    galmap:delimiter "," ;
+    galmap:trim true ;
+    galmap:lowercase true .
+
+# =============================================================================
+# MIGRATION CONFIGURATION
+# =============================================================================
+
+gali:MigrationConfig
+    a gali:Configuration ;
+    gali:batchSize 1000 ;
+    gali:parallelWorkers 4 ;
+    gali:logLevel "info" ;
+    gali:validateData true ;
+    gali:skipErrors false ;
+    gali:preserveOriginalIds true ;
+    gali:generateNewIds true ;
+    gali:idPrefix "pp_" ;
+    gali:copyMedia true ;
+    gali:generateThumbnails true ;
+    gali:thumbnailSizes (
+        [
+            galmap:name "small" ;
+            galmap:width 150 ;
+            galmap:height 150 ;
+            galmap:quality 80
+        ]
+        [
+            galmap:name "medium" ;
+            galmap:width 400 ;
+            galmap:height 400 ;
+            galmap:quality 85
+        ]
+        [
+            galmap:name "large" ;
+            galmap:width 800 ;
+            galmap:height 800 ;
+            galmap:quality 90
+        ]
+    ) ;
+    gali:supportedFormats ("jpg" "jpeg" "png" "gif" "webp") ;
+    gali:convertToWebP true ;
+    gali:preserveOriginals true .
+
+# =============================================================================
+# MIGRATION ORDER
+# =============================================================================
+
+gali:MigrationOrder
+    a gali:ExecutionOrder ;
+    gali:steps (
+        [
+            gali:order 1 ;
+            gali:mapping galmap:CategoriesTableMapping ;
+            gali:description "Import categories (hierarchical, must be first)"@en
+        ]
+        [
+            gali:order 2 ;
+            gali:mapping galmap:UsersTableMapping ;
+            gali:description "Import users"@en
+        ]
+        [
+            gali:order 3 ;
+            gali:mapping galmap:PhotosTableMapping ;
+            gali:description "Import photos with media files"@en
+        ]
+        [
+            gali:order 4 ;
+            gali:mapping galmap:CommentsTableMapping ;
+            gali:description "Import comments"@en
+        ]
+        [
+            gali:order 5 ;
+            gali:mapping galmap:RatingsTableMapping ;
+            gali:description "Import ratings"@en
+        ]
+    ) .
+
+# =============================================================================
+# POST-MIGRATION TASKS
+# =============================================================================
+
+gali:PostMigrationTasks
+    a gali:TaskList ;
+    gali:tasks (
+        [
+            gali:taskName "recalculateRatings" ;
+            gali:description "Recalculate average ratings for all photos"@en ;
+            gali:priority 1
+        ]
+        [
+            gali:taskName "generateSlugs" ;
+            gali:description "Generate SEO-friendly URL slugs"@en ;
+            gali:priority 2
+        ]
+        [
+            gali:taskName "buildSearchIndex" ;
+            gali:description "Build full-text search index"@en ;
+            gali:priority 3
+        ]
+        [
+            gali:taskName "generateSitemaps" ;
+            gali:description "Generate XML sitemaps"@en ;
+            gali:priority 4
+        ]
+        [
+            gali:taskName "validateIntegrity" ;
+            gali:description "Validate referential integrity"@en ;
+            gali:priority 5
+        ]
+    ) .

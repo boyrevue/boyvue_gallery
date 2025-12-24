@@ -1,0 +1,315 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix galcfg: <http://gallery.example.org/config#> .
+@prefix galapp: <http://gallery.example.org/app#> .
+
+# =============================================================================
+# APPLICATION CONFIGURATION - GOLDEN SOURCE
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Core Application Settings
+# -----------------------------------------------------------------------------
+
+galapp:Application
+    a galapp:Configuration ;
+    galapp:name "GalleryX" ;
+    galapp:version "1.0.0" ;
+    galapp:environment "${NODE_ENV}" ;
+    galapp:debug "${DEBUG_MODE}" ;
+    galapp:baseUrl "${SITE_URL}" ;
+    galapp:apiVersion "v1" ;
+    galapp:timezone "UTC" .
+
+# -----------------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------------
+
+galapp:Database
+    a galapp:DatabaseConfig ;
+    galapp:type "postgresql" ;
+    galapp:host "${DB_HOST}" ;
+    galapp:port "${DB_PORT}" ;
+    galapp:name "${DB_NAME}" ;
+    galapp:user "${DB_USER}" ;
+    galapp:password "${DB_PASSWORD}" ;
+    galapp:ssl "${DB_SSL}" ;
+    galapp:poolMin 5 ;
+    galapp:poolMax 20 ;
+    galapp:idleTimeout 30000 .
+
+# -----------------------------------------------------------------------------
+# Redis/Cache Configuration
+# -----------------------------------------------------------------------------
+
+galapp:Cache
+    a galapp:CacheConfig ;
+    galapp:type "redis" ;
+    galapp:host "${REDIS_HOST}" ;
+    galapp:port "${REDIS_PORT}" ;
+    galapp:password "${REDIS_PASSWORD}" ;
+    galapp:ttlDefault 3600 ;
+    galapp:ttlMedia 86400 ;
+    galapp:ttlTranslations 604800 ;
+    galapp:ttlSeo 3600 .
+
+# -----------------------------------------------------------------------------
+# Media Storage Configuration
+# -----------------------------------------------------------------------------
+
+galapp:MediaStorage
+    a galapp:StorageConfig ;
+    galapp:type "${STORAGE_TYPE}" ;
+    galapp:localPath "/var/www/gallery/media" ;
+    galapp:s3Bucket "${S3_BUCKET}" ;
+    galapp:s3Region "${S3_REGION}" ;
+    galapp:s3AccessKey "${S3_ACCESS_KEY}" ;
+    galapp:s3SecretKey "${S3_SECRET_KEY}" ;
+    galapp:cdnUrl "${CDN_URL}" ;
+    galapp:maxUploadSize 104857600 ;
+    galapp:allowedMimeTypes (
+        "image/jpeg"
+        "image/png"
+        "image/gif"
+        "image/webp"
+        "video/mp4"
+        "video/webm"
+        "video/quicktime"
+    ) .
+
+# -----------------------------------------------------------------------------
+# Image Processing Configuration
+# -----------------------------------------------------------------------------
+
+galapp:ImageProcessing
+    a galapp:ProcessingConfig ;
+    galapp:thumbnailSizes (
+        [
+            galapp:name "thumb" ;
+            galapp:width 200 ;
+            galapp:height 200 ;
+            galapp:fit "cover"
+        ]
+        [
+            galapp:name "small" ;
+            galapp:width 400 ;
+            galapp:height 400 ;
+            galapp:fit "inside"
+        ]
+        [
+            galapp:name "medium" ;
+            galapp:width 800 ;
+            galapp:height 800 ;
+            galapp:fit "inside"
+        ]
+        [
+            galapp:name "large" ;
+            galapp:width 1600 ;
+            galapp:height 1600 ;
+            galapp:fit "inside"
+        ]
+        [
+            galapp:name "full" ;
+            galapp:width 2400 ;
+            galapp:height 2400 ;
+            galapp:fit "inside"
+        ]
+    ) ;
+    galapp:outputFormat "webp" ;
+    galapp:quality 85 ;
+    galapp:stripMetadata true ;
+    galapp:watermarkEnabled "${WATERMARK_ENABLED}" ;
+    galapp:watermarkPath "/assets/watermark.png" ;
+    galapp:watermarkPosition "bottom-right" ;
+    galapp:watermarkOpacity 0.5 .
+
+# -----------------------------------------------------------------------------
+# Video Processing Configuration  
+# -----------------------------------------------------------------------------
+
+galapp:VideoProcessing
+    a galapp:ProcessingConfig ;
+    galapp:transcodeEnabled true ;
+    galapp:outputFormats ("mp4" "webm") ;
+    galapp:resolutions (
+        [
+            galapp:name "360p" ;
+            galapp:height 360 ;
+            galapp:bitrate "800k"
+        ]
+        [
+            galapp:name "480p" ;
+            galapp:height 480 ;
+            galapp:bitrate "1500k"
+        ]
+        [
+            galapp:name "720p" ;
+            galapp:height 720 ;
+            galapp:bitrate "3000k"
+        ]
+        [
+            galapp:name "1080p" ;
+            galapp:height 1080 ;
+            galapp:bitrate "6000k"
+        ]
+    ) ;
+    galapp:hlsEnabled true ;
+    galapp:thumbnailCount 10 ;
+    galapp:previewGifEnabled true ;
+    galapp:previewGifDuration 5 .
+
+# -----------------------------------------------------------------------------
+# Authentication Configuration
+# -----------------------------------------------------------------------------
+
+galapp:Auth
+    a galapp:AuthConfig ;
+    galapp:jwtSecret "${JWT_SECRET}" ;
+    galapp:jwtExpiry 86400 ;
+    galapp:refreshTokenExpiry 604800 ;
+    galapp:sessionCookieName "gx_session" ;
+    galapp:csrfEnabled true ;
+    galapp:rateLimitEnabled true ;
+    galapp:rateLimitWindow 900 ;
+    galapp:rateLimitMaxRequests 100 ;
+    galapp:ageVerificationRequired true ;
+    galapp:minimumAge 18 .
+
+# -----------------------------------------------------------------------------
+# Search Configuration
+# -----------------------------------------------------------------------------
+
+galapp:Search
+    a galapp:SearchConfig ;
+    galapp:engine "elasticsearch" ;
+    galapp:host "${ES_HOST}" ;
+    galapp:index "gallery" ;
+    galapp:minSearchLength 2 ;
+    galapp:maxResults 100 ;
+    galapp:highlightEnabled true ;
+    galapp:suggestionsEnabled true ;
+    galapp:fuzzyMatchEnabled true ;
+    galapp:facetsEnabled true ;
+    galapp:facets ("category" "creator" "tags" "sourceSite" "rating") .
+
+# -----------------------------------------------------------------------------
+# Pagination Configuration
+# -----------------------------------------------------------------------------
+
+galapp:Pagination
+    a galapp:PaginationConfig ;
+    galapp:defaultPageSize 24 ;
+    galapp:maxPageSize 100 ;
+    galapp:infiniteScrollEnabled true ;
+    galapp:preloadPages 2 .
+
+# -----------------------------------------------------------------------------
+# Feature Flags
+# -----------------------------------------------------------------------------
+
+galapp:Features
+    a galapp:FeatureFlags ;
+    galapp:commentsEnabled true ;
+    galapp:ratingsEnabled true ;
+    galapp:likesEnabled true ;
+    galapp:sharingEnabled true ;
+    galapp:downloadEnabled true ;
+    galapp:subscriptionsEnabled true ;
+    galapp:notificationsEnabled true ;
+    galapp:streamingPromoEnabled true ;
+    galapp:adultContentEnabled true ;
+    galapp:userUploadEnabled false ;
+    galapp:aiTaggingEnabled true ;
+    galapp:analyticsEnabled true .
+
+# -----------------------------------------------------------------------------
+# External Services Configuration
+# -----------------------------------------------------------------------------
+
+galapp:ExternalServices
+    a galapp:ServicesConfig ;
+    galapp:analyticsId "${GA_ID}" ;
+    galapp:sentryDsn "${SENTRY_DSN}" ;
+    galapp:cloudflareZoneId "${CF_ZONE_ID}" ;
+    galapp:recaptchaSiteKey "${RECAPTCHA_SITE_KEY}" ;
+    galapp:recaptchaSecretKey "${RECAPTCHA_SECRET_KEY}" .
+
+# -----------------------------------------------------------------------------
+# Email Configuration
+# -----------------------------------------------------------------------------
+
+galapp:Email
+    a galapp:EmailConfig ;
+    galapp:provider "smtp" ;
+    galapp:smtpHost "${SMTP_HOST}" ;
+    galapp:smtpPort "${SMTP_PORT}" ;
+    galapp:smtpUser "${SMTP_USER}" ;
+    galapp:smtpPassword "${SMTP_PASSWORD}" ;
+    galapp:fromAddress "${EMAIL_FROM}" ;
+    galapp:fromName "${SITE_NAME}" .
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+
+galapp:Logging
+    a galapp:LogConfig ;
+    galapp:level "${LOG_LEVEL}" ;
+    galapp:format "json" ;
+    galapp:destination "stdout" ;
+    galapp:includeTimestamp true ;
+    galapp:includeRequestId true ;
+    galapp:excludePaths ("/health" "/metrics") .
+
+# -----------------------------------------------------------------------------
+# CORS Configuration
+# -----------------------------------------------------------------------------
+
+galapp:CORS
+    a galapp:CORSConfig ;
+    galapp:enabled true ;
+    galapp:allowedOrigins ("${SITE_URL}" "${CDN_URL}") ;
+    galapp:allowedMethods ("GET" "POST" "PUT" "DELETE" "OPTIONS") ;
+    galapp:allowedHeaders ("Content-Type" "Authorization" "X-Requested-With") ;
+    galapp:exposedHeaders ("X-Total-Count" "X-Page-Count") ;
+    galapp:maxAge 86400 ;
+    galapp:credentials true .
+
+# -----------------------------------------------------------------------------
+# Security Headers
+# -----------------------------------------------------------------------------
+
+galapp:SecurityHeaders
+    a galapp:SecurityConfig ;
+    galapp:csp "default-src 'self'; img-src 'self' ${CDN_URL} data: blob:; media-src 'self' ${CDN_URL} blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; frame-src 'self' chaturbate.com stripchat.com bongacams.com *.cam4.com" ;
+    galapp:xFrameOptions "SAMEORIGIN" ;
+    galapp:xContentTypeOptions "nosniff" ;
+    galapp:referrerPolicy "strict-origin-when-cross-origin" ;
+    galapp:permissionsPolicy "camera=(), microphone=(), geolocation=()" .
+
+# -----------------------------------------------------------------------------
+# Import Jobs Configuration
+# -----------------------------------------------------------------------------
+
+galapp:ImportJobs
+    a galapp:JobsConfig ;
+    galapp:concurrency 4 ;
+    galapp:retryAttempts 3 ;
+    galapp:retryDelay 5000 ;
+    galapp:timeout 300000 ;
+    galapp:cleanupAfterDays 7 ;
+    galapp:notifyOnComplete true ;
+    galapp:notifyOnError true .
+
+# -----------------------------------------------------------------------------
+# TTL File References (Golden Source Links)
+# -----------------------------------------------------------------------------
+
+galapp:ConfigSources
+    a galapp:ConfigSourceList ;
+    galapp:ontology "/config/ontology/gallery-core.ttl" ;
+    galapp:i18n "/config/i18n.ttl" ;
+    galapp:streaming "/config/streaming-platforms.ttl" ;
+    galapp:seo "/config/seo.ttl" ;
+    galapp:import "/config/photopost-import.ttl" .

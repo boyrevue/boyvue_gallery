@@ -1,0 +1,775 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix gali18n: <http://gallery.example.org/i18n#> .
+@prefix galcfg: <http://gallery.example.org/config#> .
+
+# =============================================================================
+# SUPPORTED LANGUAGES CONFIGURATION
+# =============================================================================
+
+gali18n:Language
+    a rdfs:Class ;
+    rdfs:label "Language"@en .
+
+gali18n:en
+    a gali18n:Language ;
+    gali18n:code "en" ;
+    gali18n:name "English"@en ;
+    gali18n:nativeName "English" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:default true ;
+    gali18n:locale "en-US" ;
+    gali18n:dateFormat "MMMM D, YYYY" ;
+    gali18n:timeFormat "h:mm A" ;
+    gali18n:numberFormat "#,###.##" ;
+    gali18n:flagEmoji "🇺🇸" .
+
+gali18n:es
+    a gali18n:Language ;
+    gali18n:code "es" ;
+    gali18n:name "Spanish"@en ;
+    gali18n:nativeName "Español" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "es-ES" ;
+    gali18n:dateFormat "D [de] MMMM [de] YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#.###,##" ;
+    gali18n:flagEmoji "🇪🇸" .
+
+gali18n:fr
+    a gali18n:Language ;
+    gali18n:code "fr" ;
+    gali18n:name "French"@en ;
+    gali18n:nativeName "Français" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "fr-FR" ;
+    gali18n:dateFormat "D MMMM YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "# ###,##" ;
+    gali18n:flagEmoji "🇫🇷" .
+
+gali18n:de
+    a gali18n:Language ;
+    gali18n:code "de" ;
+    gali18n:name "German"@en ;
+    gali18n:nativeName "Deutsch" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "de-DE" ;
+    gali18n:dateFormat "D. MMMM YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#.###,##" ;
+    gali18n:flagEmoji "🇩🇪" .
+
+gali18n:ja
+    a gali18n:Language ;
+    gali18n:code "ja" ;
+    gali18n:name "Japanese"@en ;
+    gali18n:nativeName "日本語" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "ja-JP" ;
+    gali18n:dateFormat "YYYY年M月D日" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#,###" ;
+    gali18n:flagEmoji "🇯🇵" .
+
+gali18n:pt
+    a gali18n:Language ;
+    gali18n:code "pt" ;
+    gali18n:name "Portuguese"@en ;
+    gali18n:nativeName "Português" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "pt-BR" ;
+    gali18n:dateFormat "D [de] MMMM [de] YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#.###,##" ;
+    gali18n:flagEmoji "🇧🇷" .
+
+gali18n:ru
+    a gali18n:Language ;
+    gali18n:code "ru" ;
+    gali18n:name "Russian"@en ;
+    gali18n:nativeName "Русский" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "ru-RU" ;
+    gali18n:dateFormat "D MMMM YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "# ###,##" ;
+    gali18n:flagEmoji "🇷🇺" .
+
+gali18n:zh
+    a gali18n:Language ;
+    gali18n:code "zh" ;
+    gali18n:name "Chinese"@en ;
+    gali18n:nativeName "中文" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "zh-CN" ;
+    gali18n:dateFormat "YYYY年M月D日" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#,###.##" ;
+    gali18n:flagEmoji "🇨🇳" .
+
+gali18n:it
+    a gali18n:Language ;
+    gali18n:code "it" ;
+    gali18n:name "Italian"@en ;
+    gali18n:nativeName "Italiano" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "it-IT" ;
+    gali18n:dateFormat "D MMMM YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#.###,##" ;
+    gali18n:flagEmoji "🇮🇹" .
+
+gali18n:nl
+    a gali18n:Language ;
+    gali18n:code "nl" ;
+    gali18n:name "Dutch"@en ;
+    gali18n:nativeName "Nederlands" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "nl-NL" ;
+    gali18n:dateFormat "D MMMM YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#.###,##" ;
+    gali18n:flagEmoji "🇳🇱" .
+
+gali18n:pl
+    a gali18n:Language ;
+    gali18n:code "pl" ;
+    gali18n:name "Polish"@en ;
+    gali18n:nativeName "Polski" ;
+    gali18n:direction "ltr" ;
+    gali18n:enabled true ;
+    gali18n:locale "pl-PL" ;
+    gali18n:dateFormat "D MMMM YYYY" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "# ###,##" ;
+    gali18n:flagEmoji "🇵🇱" .
+
+gali18n:ar
+    a gali18n:Language ;
+    gali18n:code "ar" ;
+    gali18n:name "Arabic"@en ;
+    gali18n:nativeName "العربية" ;
+    gali18n:direction "rtl" ;
+    gali18n:enabled true ;
+    gali18n:locale "ar-SA" ;
+    gali18n:dateFormat "YYYY/M/D" ;
+    gali18n:timeFormat "HH:mm" ;
+    gali18n:numberFormat "#,###.##" ;
+    gali18n:flagEmoji "🇸🇦" .
+
+# =============================================================================
+# UI TRANSLATIONS - NAVIGATION
+# =============================================================================
+
+gali18n:nav_home
+    a gali18n:TranslationKey ;
+    gali18n:key "nav.home" ;
+    gali18n:text "Home"@en ;
+    gali18n:text "Inicio"@es ;
+    gali18n:text "Accueil"@fr ;
+    gali18n:text "Startseite"@de ;
+    gali18n:text "ホーム"@ja ;
+    gali18n:text "Início"@pt ;
+    gali18n:text "Главная"@ru ;
+    gali18n:text "首页"@zh ;
+    gali18n:text "Home"@it ;
+    gali18n:text "Home"@nl ;
+    gali18n:text "Strona główna"@pl ;
+    gali18n:text "الرئيسية"@ar .
+
+gali18n:nav_galleries
+    a gali18n:TranslationKey ;
+    gali18n:key "nav.galleries" ;
+    gali18n:text "Galleries"@en ;
+    gali18n:text "Galerías"@es ;
+    gali18n:text "Galeries"@fr ;
+    gali18n:text "Galerien"@de ;
+    gali18n:text "ギャラリー"@ja ;
+    gali18n:text "Galerias"@pt ;
+    gali18n:text "Галереи"@ru ;
+    gali18n:text "画廊"@zh ;
+    gali18n:text "Gallerie"@it ;
+    gali18n:text "Galerijen"@nl ;
+    gali18n:text "Galerie"@pl ;
+    gali18n:text "المعارض"@ar .
+
+gali18n:nav_videos
+    a gali18n:TranslationKey ;
+    gali18n:key "nav.videos" ;
+    gali18n:text "Videos"@en ;
+    gali18n:text "Vídeos"@es ;
+    gali18n:text "Vidéos"@fr ;
+    gali18n:text "Videos"@de ;
+    gali18n:text "動画"@ja ;
+    gali18n:text "Vídeos"@pt ;
+    gali18n:text "Видео"@ru ;
+    gali18n:text "视频"@zh ;
+    gali18n:text "Video"@it ;
+    gali18n:text "Video's"@nl ;
+    gali18n:text "Filmy"@pl ;
+    gali18n:text "مقاطع الفيديو"@ar .
+
+gali18n:nav_creators
+    a gali18n:TranslationKey ;
+    gali18n:key "nav.creators" ;
+    gali18n:text "Creators"@en ;
+    gali18n:text "Creadores"@es ;
+    gali18n:text "Créateurs"@fr ;
+    gali18n:text "Ersteller"@de ;
+    gali18n:text "クリエイター"@ja ;
+    gali18n:text "Criadores"@pt ;
+    gali18n:text "Авторы"@ru ;
+    gali18n:text "创作者"@zh ;
+    gali18n:text "Creatori"@it ;
+    gali18n:text "Makers"@nl ;
+    gali18n:text "Twórcy"@pl ;
+    gali18n:text "المبدعون"@ar .
+
+gali18n:nav_live
+    a gali18n:TranslationKey ;
+    gali18n:key "nav.live" ;
+    gali18n:text "Live"@en ;
+    gali18n:text "En Vivo"@es ;
+    gali18n:text "En Direct"@fr ;
+    gali18n:text "Live"@de ;
+    gali18n:text "ライブ"@ja ;
+    gali18n:text "Ao Vivo"@pt ;
+    gali18n:text "Прямой эфир"@ru ;
+    gali18n:text "直播"@zh ;
+    gali18n:text "Dal Vivo"@it ;
+    gali18n:text "Live"@nl ;
+    gali18n:text "Na żywo"@pl ;
+    gali18n:text "مباشر"@ar .
+
+gali18n:nav_categories
+    a gali18n:TranslationKey ;
+    gali18n:key "nav.categories" ;
+    gali18n:text "Categories"@en ;
+    gali18n:text "Categorías"@es ;
+    gali18n:text "Catégories"@fr ;
+    gali18n:text "Kategorien"@de ;
+    gali18n:text "カテゴリー"@ja ;
+    gali18n:text "Categorias"@pt ;
+    gali18n:text "Категории"@ru ;
+    gali18n:text "分类"@zh ;
+    gali18n:text "Categorie"@it ;
+    gali18n:text "Categorieën"@nl ;
+    gali18n:text "Kategorie"@pl ;
+    gali18n:text "الفئات"@ar .
+
+gali18n:nav_search
+    a gali18n:TranslationKey ;
+    gali18n:key "nav.search" ;
+    gali18n:text "Search"@en ;
+    gali18n:text "Buscar"@es ;
+    gali18n:text "Rechercher"@fr ;
+    gali18n:text "Suche"@de ;
+    gali18n:text "検索"@ja ;
+    gali18n:text "Pesquisar"@pt ;
+    gali18n:text "Поиск"@ru ;
+    gali18n:text "搜索"@zh ;
+    gali18n:text "Cerca"@it ;
+    gali18n:text "Zoeken"@nl ;
+    gali18n:text "Szukaj"@pl ;
+    gali18n:text "بحث"@ar .
+
+# =============================================================================
+# UI TRANSLATIONS - GALLERY
+# =============================================================================
+
+gali18n:gallery_photos
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.photos" ;
+    gali18n:text "{count} photos"@en ;
+    gali18n:text "{count} fotos"@es ;
+    gali18n:text "{count} photos"@fr ;
+    gali18n:text "{count} Fotos"@de ;
+    gali18n:text "{count}枚の写真"@ja ;
+    gali18n:text "{count} fotos"@pt ;
+    gali18n:text "{count} фото"@ru ;
+    gali18n:text "{count}张照片"@zh ;
+    gali18n:text "{count} foto"@it ;
+    gali18n:text "{count} foto's"@nl ;
+    gali18n:text "{count} zdjęć"@pl ;
+    gali18n:text "{count} صور"@ar .
+
+gali18n:gallery_views
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.views" ;
+    gali18n:text "{count} views"@en ;
+    gali18n:text "{count} vistas"@es ;
+    gali18n:text "{count} vues"@fr ;
+    gali18n:text "{count} Aufrufe"@de ;
+    gali18n:text "{count}回視聴"@ja ;
+    gali18n:text "{count} visualizações"@pt ;
+    gali18n:text "{count} просмотров"@ru ;
+    gali18n:text "{count}次浏览"@zh ;
+    gali18n:text "{count} visualizzazioni"@it ;
+    gali18n:text "{count} weergaven"@nl ;
+    gali18n:text "{count} wyświetleń"@pl ;
+    gali18n:text "{count} مشاهدة"@ar .
+
+gali18n:gallery_rating
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.rating" ;
+    gali18n:text "Rating"@en ;
+    gali18n:text "Puntuación"@es ;
+    gali18n:text "Note"@fr ;
+    gali18n:text "Bewertung"@de ;
+    gali18n:text "評価"@ja ;
+    gali18n:text "Avaliação"@pt ;
+    gali18n:text "Рейтинг"@ru ;
+    gali18n:text "评分"@zh ;
+    gali18n:text "Valutazione"@it ;
+    gali18n:text "Beoordeling"@nl ;
+    gali18n:text "Ocena"@pl ;
+    gali18n:text "التقييم"@ar .
+
+gali18n:gallery_download
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.download" ;
+    gali18n:text "Download"@en ;
+    gali18n:text "Descargar"@es ;
+    gali18n:text "Télécharger"@fr ;
+    gali18n:text "Herunterladen"@de ;
+    gali18n:text "ダウンロード"@ja ;
+    gali18n:text "Baixar"@pt ;
+    gali18n:text "Скачать"@ru ;
+    gali18n:text "下载"@zh ;
+    gali18n:text "Scarica"@it ;
+    gali18n:text "Downloaden"@nl ;
+    gali18n:text "Pobierz"@pl ;
+    gali18n:text "تحميل"@ar .
+
+gali18n:gallery_share
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.share" ;
+    gali18n:text "Share"@en ;
+    gali18n:text "Compartir"@es ;
+    gali18n:text "Partager"@fr ;
+    gali18n:text "Teilen"@de ;
+    gali18n:text "共有"@ja ;
+    gali18n:text "Compartilhar"@pt ;
+    gali18n:text "Поделиться"@ru ;
+    gali18n:text "分享"@zh ;
+    gali18n:text "Condividi"@it ;
+    gali18n:text "Delen"@nl ;
+    gali18n:text "Udostępnij"@pl ;
+    gali18n:text "مشاركة"@ar .
+
+gali18n:gallery_like
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.like" ;
+    gali18n:text "Like"@en ;
+    gali18n:text "Me gusta"@es ;
+    gali18n:text "J'aime"@fr ;
+    gali18n:text "Gefällt mir"@de ;
+    gali18n:text "いいね"@ja ;
+    gali18n:text "Curtir"@pt ;
+    gali18n:text "Нравится"@ru ;
+    gali18n:text "喜欢"@zh ;
+    gali18n:text "Mi piace"@it ;
+    gali18n:text "Vind ik leuk"@nl ;
+    gali18n:text "Lubię to"@pl ;
+    gali18n:text "إعجاب"@ar .
+
+gali18n:gallery_comments
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.comments" ;
+    gali18n:text "Comments"@en ;
+    gali18n:text "Comentarios"@es ;
+    gali18n:text "Commentaires"@fr ;
+    gali18n:text "Kommentare"@de ;
+    gali18n:text "コメント"@ja ;
+    gali18n:text "Comentários"@pt ;
+    gali18n:text "Комментарии"@ru ;
+    gali18n:text "评论"@zh ;
+    gali18n:text "Commenti"@it ;
+    gali18n:text "Reacties"@nl ;
+    gali18n:text "Komentarze"@pl ;
+    gali18n:text "التعليقات"@ar .
+
+gali18n:gallery_add_comment
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.addComment" ;
+    gali18n:text "Add a comment..."@en ;
+    gali18n:text "Añadir un comentario..."@es ;
+    gali18n:text "Ajouter un commentaire..."@fr ;
+    gali18n:text "Kommentar hinzufügen..."@de ;
+    gali18n:text "コメントを追加..."@ja ;
+    gali18n:text "Adicionar um comentário..."@pt ;
+    gali18n:text "Добавить комментарий..."@ru ;
+    gali18n:text "添加评论..."@zh ;
+    gali18n:text "Aggiungi un commento..."@it ;
+    gali18n:text "Voeg een reactie toe..."@nl ;
+    gali18n:text "Dodaj komentarz..."@pl ;
+    gali18n:text "أضف تعليقاً..."@ar .
+
+gali18n:gallery_from_site
+    a gali18n:TranslationKey ;
+    gali18n:key "gallery.fromSite" ;
+    gali18n:text "From {site}"@en ;
+    gali18n:text "De {site}"@es ;
+    gali18n:text "De {site}"@fr ;
+    gali18n:text "Von {site}"@de ;
+    gali18n:text "{site}より"@ja ;
+    gali18n:text "De {site}"@pt ;
+    gali18n:text "С сайта {site}"@ru ;
+    gali18n:text "来自{site}"@zh ;
+    gali18n:text "Da {site}"@it ;
+    gali18n:text "Van {site}"@nl ;
+    gali18n:text "Z {site}"@pl ;
+    gali18n:text "من {site}"@ar .
+
+# =============================================================================
+# UI TRANSLATIONS - STREAMING
+# =============================================================================
+
+gali18n:streaming_watch_live
+    a gali18n:TranslationKey ;
+    gali18n:key "streaming.watchLive" ;
+    gali18n:text "Watch Live"@en ;
+    gali18n:text "Ver en Vivo"@es ;
+    gali18n:text "Regarder en Direct"@fr ;
+    gali18n:text "Live ansehen"@de ;
+    gali18n:text "ライブを見る"@ja ;
+    gali18n:text "Assistir Ao Vivo"@pt ;
+    gali18n:text "Смотреть прямой эфир"@ru ;
+    gali18n:text "观看直播"@zh ;
+    gali18n:text "Guarda dal Vivo"@it ;
+    gali18n:text "Live kijken"@nl ;
+    gali18n:text "Oglądaj na żywo"@pl ;
+    gali18n:text "شاهد مباشرة"@ar .
+
+gali18n:streaming_offline
+    a gali18n:TranslationKey ;
+    gali18n:key "streaming.offline" ;
+    gali18n:text "Currently Offline"@en ;
+    gali18n:text "Actualmente Sin Conexión"@es ;
+    gali18n:text "Actuellement Hors Ligne"@fr ;
+    gali18n:text "Derzeit Offline"@de ;
+    gali18n:text "現在オフライン"@ja ;
+    gali18n:text "Atualmente Offline"@pt ;
+    gali18n:text "Сейчас не в сети"@ru ;
+    gali18n:text "当前离线"@zh ;
+    gali18n:text "Attualmente Offline"@it ;
+    gali18n:text "Momenteel Offline"@nl ;
+    gali18n:text "Obecnie Offline"@pl ;
+    gali18n:text "غير متصل حالياً"@ar .
+
+gali18n:streaming_followers
+    a gali18n:TranslationKey ;
+    gali18n:key "streaming.followers" ;
+    gali18n:text "{count} followers"@en ;
+    gali18n:text "{count} seguidores"@es ;
+    gali18n:text "{count} abonnés"@fr ;
+    gali18n:text "{count} Follower"@de ;
+    gali18n:text "{count}フォロワー"@ja ;
+    gali18n:text "{count} seguidores"@pt ;
+    gali18n:text "{count} подписчиков"@ru ;
+    gali18n:text "{count}关注者"@zh ;
+    gali18n:text "{count} follower"@it ;
+    gali18n:text "{count} volgers"@nl ;
+    gali18n:text "{count} obserwujących"@pl ;
+    gali18n:text "{count} متابع"@ar .
+
+gali18n:streaming_visit_profile
+    a gali18n:TranslationKey ;
+    gali18n:key "streaming.visitProfile" ;
+    gali18n:text "Visit Profile"@en ;
+    gali18n:text "Visitar Perfil"@es ;
+    gali18n:text "Visiter le Profil"@fr ;
+    gali18n:text "Profil besuchen"@de ;
+    gali18n:text "プロフィールを見る"@ja ;
+    gali18n:text "Visitar Perfil"@pt ;
+    gali18n:text "Посетить профиль"@ru ;
+    gali18n:text "访问主页"@zh ;
+    gali18n:text "Visita il Profilo"@it ;
+    gali18n:text "Profiel bezoeken"@nl ;
+    gali18n:text "Odwiedź profil"@pl ;
+    gali18n:text "زيارة الملف الشخصي"@ar .
+
+# =============================================================================
+# UI TRANSLATIONS - COMMON ACTIONS
+# =============================================================================
+
+gali18n:action_load_more
+    a gali18n:TranslationKey ;
+    gali18n:key "action.loadMore" ;
+    gali18n:text "Load More"@en ;
+    gali18n:text "Cargar Más"@es ;
+    gali18n:text "Charger Plus"@fr ;
+    gali18n:text "Mehr laden"@de ;
+    gali18n:text "もっと見る"@ja ;
+    gali18n:text "Carregar Mais"@pt ;
+    gali18n:text "Загрузить ещё"@ru ;
+    gali18n:text "加载更多"@zh ;
+    gali18n:text "Carica Altro"@it ;
+    gali18n:text "Meer laden"@nl ;
+    gali18n:text "Załaduj więcej"@pl ;
+    gali18n:text "تحميل المزيد"@ar .
+
+gali18n:action_back
+    a gali18n:TranslationKey ;
+    gali18n:key "action.back" ;
+    gali18n:text "Back"@en ;
+    gali18n:text "Volver"@es ;
+    gali18n:text "Retour"@fr ;
+    gali18n:text "Zurück"@de ;
+    gali18n:text "戻る"@ja ;
+    gali18n:text "Voltar"@pt ;
+    gali18n:text "Назад"@ru ;
+    gali18n:text "返回"@zh ;
+    gali18n:text "Indietro"@it ;
+    gali18n:text "Terug"@nl ;
+    gali18n:text "Wstecz"@pl ;
+    gali18n:text "رجوع"@ar .
+
+gali18n:action_submit
+    a gali18n:TranslationKey ;
+    gali18n:key "action.submit" ;
+    gali18n:text "Submit"@en ;
+    gali18n:text "Enviar"@es ;
+    gali18n:text "Soumettre"@fr ;
+    gali18n:text "Absenden"@de ;
+    gali18n:text "送信"@ja ;
+    gali18n:text "Enviar"@pt ;
+    gali18n:text "Отправить"@ru ;
+    gali18n:text "提交"@zh ;
+    gali18n:text "Invia"@it ;
+    gali18n:text "Verzenden"@nl ;
+    gali18n:text "Wyślij"@pl ;
+    gali18n:text "إرسال"@ar .
+
+gali18n:action_cancel
+    a gali18n:TranslationKey ;
+    gali18n:key "action.cancel" ;
+    gali18n:text "Cancel"@en ;
+    gali18n:text "Cancelar"@es ;
+    gali18n:text "Annuler"@fr ;
+    gali18n:text "Abbrechen"@de ;
+    gali18n:text "キャンセル"@ja ;
+    gali18n:text "Cancelar"@pt ;
+    gali18n:text "Отмена"@ru ;
+    gali18n:text "取消"@zh ;
+    gali18n:text "Annulla"@it ;
+    gali18n:text "Annuleren"@nl ;
+    gali18n:text "Anuluj"@pl ;
+    gali18n:text "إلغاء"@ar .
+
+# =============================================================================
+# UI TRANSLATIONS - TIME/DATE
+# =============================================================================
+
+gali18n:time_just_now
+    a gali18n:TranslationKey ;
+    gali18n:key "time.justNow" ;
+    gali18n:text "Just now"@en ;
+    gali18n:text "Ahora mismo"@es ;
+    gali18n:text "À l'instant"@fr ;
+    gali18n:text "Gerade eben"@de ;
+    gali18n:text "たった今"@ja ;
+    gali18n:text "Agora mesmo"@pt ;
+    gali18n:text "Только что"@ru ;
+    gali18n:text "刚刚"@zh ;
+    gali18n:text "Proprio ora"@it ;
+    gali18n:text "Zojuist"@nl ;
+    gali18n:text "Właśnie teraz"@pl ;
+    gali18n:text "الآن"@ar .
+
+gali18n:time_minutes_ago
+    a gali18n:TranslationKey ;
+    gali18n:key "time.minutesAgo" ;
+    gali18n:text "{count} minutes ago"@en ;
+    gali18n:text "hace {count} minutos"@es ;
+    gali18n:text "il y a {count} minutes"@fr ;
+    gali18n:text "vor {count} Minuten"@de ;
+    gali18n:text "{count}分前"@ja ;
+    gali18n:text "{count} minutos atrás"@pt ;
+    gali18n:text "{count} минут назад"@ru ;
+    gali18n:text "{count}分钟前"@zh ;
+    gali18n:text "{count} minuti fa"@it ;
+    gali18n:text "{count} minuten geleden"@nl ;
+    gali18n:text "{count} minut temu"@pl ;
+    gali18n:text "منذ {count} دقائق"@ar .
+
+gali18n:time_hours_ago
+    a gali18n:TranslationKey ;
+    gali18n:key "time.hoursAgo" ;
+    gali18n:text "{count} hours ago"@en ;
+    gali18n:text "hace {count} horas"@es ;
+    gali18n:text "il y a {count} heures"@fr ;
+    gali18n:text "vor {count} Stunden"@de ;
+    gali18n:text "{count}時間前"@ja ;
+    gali18n:text "{count} horas atrás"@pt ;
+    gali18n:text "{count} часов назад"@ru ;
+    gali18n:text "{count}小时前"@zh ;
+    gali18n:text "{count} ore fa"@it ;
+    gali18n:text "{count} uur geleden"@nl ;
+    gali18n:text "{count} godzin temu"@pl ;
+    gali18n:text "منذ {count} ساعات"@ar .
+
+gali18n:time_days_ago
+    a gali18n:TranslationKey ;
+    gali18n:key "time.daysAgo" ;
+    gali18n:text "{count} days ago"@en ;
+    gali18n:text "hace {count} días"@es ;
+    gali18n:text "il y a {count} jours"@fr ;
+    gali18n:text "vor {count} Tagen"@de ;
+    gali18n:text "{count}日前"@ja ;
+    gali18n:text "{count} dias atrás"@pt ;
+    gali18n:text "{count} дней назад"@ru ;
+    gali18n:text "{count}天前"@zh ;
+    gali18n:text "{count} giorni fa"@it ;
+    gali18n:text "{count} dagen geleden"@nl ;
+    gali18n:text "{count} dni temu"@pl ;
+    gali18n:text "منذ {count} أيام"@ar .
+
+# =============================================================================
+# UI TRANSLATIONS - ERRORS & MESSAGES
+# =============================================================================
+
+gali18n:error_not_found
+    a gali18n:TranslationKey ;
+    gali18n:key "error.notFound" ;
+    gali18n:text "Content not found"@en ;
+    gali18n:text "Contenido no encontrado"@es ;
+    gali18n:text "Contenu non trouvé"@fr ;
+    gali18n:text "Inhalt nicht gefunden"@de ;
+    gali18n:text "コンテンツが見つかりません"@ja ;
+    gali18n:text "Conteúdo não encontrado"@pt ;
+    gali18n:text "Контент не найден"@ru ;
+    gali18n:text "内容未找到"@zh ;
+    gali18n:text "Contenuto non trovato"@it ;
+    gali18n:text "Inhoud niet gevonden"@nl ;
+    gali18n:text "Nie znaleziono zawartości"@pl ;
+    gali18n:text "المحتوى غير موجود"@ar .
+
+gali18n:error_loading
+    a gali18n:TranslationKey ;
+    gali18n:key "error.loading" ;
+    gali18n:text "Error loading content"@en ;
+    gali18n:text "Error al cargar contenido"@es ;
+    gali18n:text "Erreur de chargement"@fr ;
+    gali18n:text "Fehler beim Laden"@de ;
+    gali18n:text "コンテンツの読み込みエラー"@ja ;
+    gali18n:text "Erro ao carregar conteúdo"@pt ;
+    gali18n:text "Ошибка загрузки"@ru ;
+    gali18n:text "加载内容出错"@zh ;
+    gali18n:text "Errore nel caricamento"@it ;
+    gali18n:text "Fout bij laden"@nl ;
+    gali18n:text "Błąd ładowania"@pl ;
+    gali18n:text "خطأ في تحميل المحتوى"@ar .
+
+gali18n:msg_loading
+    a gali18n:TranslationKey ;
+    gali18n:key "msg.loading" ;
+    gali18n:text "Loading..."@en ;
+    gali18n:text "Cargando..."@es ;
+    gali18n:text "Chargement..."@fr ;
+    gali18n:text "Wird geladen..."@de ;
+    gali18n:text "読み込み中..."@ja ;
+    gali18n:text "Carregando..."@pt ;
+    gali18n:text "Загрузка..."@ru ;
+    gali18n:text "加载中..."@zh ;
+    gali18n:text "Caricamento..."@it ;
+    gali18n:text "Laden..."@nl ;
+    gali18n:text "Ładowanie..."@pl ;
+    gali18n:text "جاري التحميل..."@ar .
+
+gali18n:msg_no_results
+    a gali18n:TranslationKey ;
+    gali18n:key "msg.noResults" ;
+    gali18n:text "No results found"@en ;
+    gali18n:text "No se encontraron resultados"@es ;
+    gali18n:text "Aucun résultat trouvé"@fr ;
+    gali18n:text "Keine Ergebnisse gefunden"@de ;
+    gali18n:text "結果が見つかりませんでした"@ja ;
+    gali18n:text "Nenhum resultado encontrado"@pt ;
+    gali18n:text "Результаты не найдены"@ru ;
+    gali18n:text "未找到结果"@zh ;
+    gali18n:text "Nessun risultato trovato"@it ;
+    gali18n:text "Geen resultaten gevonden"@nl ;
+    gali18n:text "Nie znaleziono wyników"@pl ;
+    gali18n:text "لم يتم العثور على نتائج"@ar .
+
+# =============================================================================
+# UI TRANSLATIONS - AGE VERIFICATION
+# =============================================================================
+
+gali18n:age_verify_title
+    a gali18n:TranslationKey ;
+    gali18n:key "ageVerify.title" ;
+    gali18n:text "Age Verification Required"@en ;
+    gali18n:text "Verificación de Edad Requerida"@es ;
+    gali18n:text "Vérification de l'Âge Requise"@fr ;
+    gali18n:text "Altersverifizierung Erforderlich"@de ;
+    gali18n:text "年齢確認が必要です"@ja ;
+    gali18n:text "Verificação de Idade Necessária"@pt ;
+    gali18n:text "Требуется подтверждение возраста"@ru ;
+    gali18n:text "需要年龄验证"@zh ;
+    gali18n:text "Verifica dell'Età Richiesta"@it ;
+    gali18n:text "Leeftijdsverificatie Vereist"@nl ;
+    gali18n:text "Wymagana weryfikacja wieku"@pl ;
+    gali18n:text "التحقق من العمر مطلوب"@ar .
+
+gali18n:age_verify_message
+    a gali18n:TranslationKey ;
+    gali18n:key "ageVerify.message" ;
+    gali18n:text "This website contains adult content. You must be 18 years or older to enter."@en ;
+    gali18n:text "Este sitio web contiene contenido para adultos. Debes tener 18 años o más para entrar."@es ;
+    gali18n:text "Ce site web contient du contenu pour adultes. Vous devez avoir 18 ans ou plus pour entrer."@fr ;
+    gali18n:text "Diese Website enthält Inhalte für Erwachsene. Sie müssen 18 Jahre oder älter sein, um einzutreten."@de ;
+    gali18n:text "このウェブサイトには成人向けコンテンツが含まれています。入場するには18歳以上である必要があります。"@ja ;
+    gali18n:text "Este site contém conteúdo adulto. Você deve ter 18 anos ou mais para entrar."@pt ;
+    gali18n:text "Этот сайт содержит контент для взрослых. Вам должно быть 18 лет или больше для входа."@ru ;
+    gali18n:text "本网站包含成人内容。您必须年满18岁才能进入。"@zh ;
+    gali18n:text "Questo sito web contiene contenuti per adulti. Devi avere 18 anni o più per entrare."@it ;
+    gali18n:text "Deze website bevat inhoud voor volwassenen. U moet 18 jaar of ouder zijn om binnen te komen."@nl ;
+    gali18n:text "Ta strona zawiera treści dla dorosłych. Musisz mieć 18 lat lub więcej, aby wejść."@pl ;
+    gali18n:text "يحتوي هذا الموقع على محتوى للبالغين. يجب أن يكون عمرك 18 عامًا أو أكثر للدخول."@ar .
+
+gali18n:age_verify_confirm
+    a gali18n:TranslationKey ;
+    gali18n:key "ageVerify.confirm" ;
+    gali18n:text "I am 18 or older - Enter"@en ;
+    gali18n:text "Tengo 18 años o más - Entrar"@es ;
+    gali18n:text "J'ai 18 ans ou plus - Entrer"@fr ;
+    gali18n:text "Ich bin 18 oder älter - Eintreten"@de ;
+    gali18n:text "18歳以上です - 入場する"@ja ;
+    gali18n:text "Tenho 18 anos ou mais - Entrar"@pt ;
+    gali18n:text "Мне 18 или больше - Войти"@ru ;
+    gali18n:text "我已年满18岁 - 进入"@zh ;
+    gali18n:text "Ho 18 anni o più - Entra"@it ;
+    gali18n:text "Ik ben 18 of ouder - Betreden"@nl ;
+    gali18n:text "Mam 18 lat lub więcej - Wejdź"@pl ;
+    gali18n:text "عمري 18 عامًا أو أكثر - دخول"@ar .
+
+gali18n:age_verify_exit
+    a gali18n:TranslationKey ;
+    gali18n:key "ageVerify.exit" ;
+    gali18n:text "Exit"@en ;
+    gali18n:text "Salir"@es ;
+    gali18n:text "Sortir"@fr ;
+    gali18n:text "Verlassen"@de ;
+    gali18n:text "退出"@ja ;
+    gali18n:text "Sair"@pt ;
+    gali18n:text "Выйти"@ru ;
+    gali18n:text "退出"@zh ;
+    gali18n:text "Esci"@it ;
+    gali18n:text "Afsluiten"@nl ;
+    gali18n:text "Wyjdź"@pl ;
+    gali18n:text "خروج"@ar .

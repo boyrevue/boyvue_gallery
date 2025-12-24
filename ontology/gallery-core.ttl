@@ -1,0 +1,574 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix schema: <http://schema.org/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix gal: <http://gallery.example.org/ontology#> .
+@prefix galm: <http://gallery.example.org/media#> .
+@prefix galu: <http://gallery.example.org/user#> .
+@prefix galc: <http://gallery.example.org/content#> .
+@prefix gals: <http://gallery.example.org/streaming#> .
+@prefix gali: <http://gallery.example.org/import#> .
+
+# =============================================================================
+# ONTOLOGY METADATA
+# =============================================================================
+
+<http://gallery.example.org/ontology>
+    a owl:Ontology ;
+    owl:versionInfo "1.0.0" ;
+    dcterms:title "Gallery Platform Ontology"@en ;
+    dcterms:description "Comprehensive ontology for multilingual media gallery with streaming integration"@en ;
+    dcterms:creator "Gallery Platform" ;
+    dcterms:created "2025-01-01"^^xsd:date .
+
+# =============================================================================
+# CORE CLASSES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Media Base Classes
+# -----------------------------------------------------------------------------
+
+gal:MediaItem
+    a owl:Class ;
+    rdfs:label "Media Item"@en ;
+    rdfs:label "Élément Média"@fr ;
+    rdfs:label "Elemento Multimedia"@es ;
+    rdfs:label "Medienelement"@de ;
+    rdfs:label "メディアアイテム"@ja ;
+    rdfs:comment "Base class for all media content"@en ;
+    rdfs:subClassOf schema:MediaObject .
+
+gal:Image
+    a owl:Class ;
+    rdfs:label "Image"@en ;
+    rdfs:label "Image"@fr ;
+    rdfs:label "Imagen"@es ;
+    rdfs:label "Bild"@de ;
+    rdfs:label "画像"@ja ;
+    rdfs:subClassOf gal:MediaItem, schema:ImageObject .
+
+gal:Video
+    a owl:Class ;
+    rdfs:label "Video"@en ;
+    rdfs:label "Vidéo"@fr ;
+    rdfs:label "Vídeo"@es ;
+    rdfs:label "Video"@de ;
+    rdfs:label "動画"@ja ;
+    rdfs:subClassOf gal:MediaItem, schema:VideoObject .
+
+gal:Gallery
+    a owl:Class ;
+    rdfs:label "Gallery"@en ;
+    rdfs:label "Galerie"@fr ;
+    rdfs:label "Galería"@es ;
+    rdfs:label "Galerie"@de ;
+    rdfs:label "ギャラリー"@ja ;
+    rdfs:comment "Collection of media items"@en ;
+    rdfs:subClassOf schema:CollectionPage .
+
+gal:PhotoSet
+    a owl:Class ;
+    rdfs:label "Photo Set"@en ;
+    rdfs:label "Ensemble de Photos"@fr ;
+    rdfs:label "Conjunto de Fotos"@es ;
+    rdfs:label "Fotoset"@de ;
+    rdfs:label "フォトセット"@ja ;
+    rdfs:comment "Curated collection of related images"@en ;
+    rdfs:subClassOf gal:Gallery .
+
+# -----------------------------------------------------------------------------
+# Category and Organization Classes
+# -----------------------------------------------------------------------------
+
+gal:Category
+    a owl:Class ;
+    rdfs:label "Category"@en ;
+    rdfs:label "Catégorie"@fr ;
+    rdfs:label "Categoría"@es ;
+    rdfs:label "Kategorie"@de ;
+    rdfs:label "カテゴリー"@ja ;
+    rdfs:subClassOf skos:Concept .
+
+gal:Tag
+    a owl:Class ;
+    rdfs:label "Tag"@en ;
+    rdfs:label "Étiquette"@fr ;
+    rdfs:label "Etiqueta"@es ;
+    rdfs:label "Schlagwort"@de ;
+    rdfs:label "タグ"@ja ;
+    rdfs:subClassOf skos:Concept .
+
+gal:SourceSite
+    a owl:Class ;
+    rdfs:label "Source Site"@en ;
+    rdfs:label "Site Source"@fr ;
+    rdfs:label "Sitio de Origen"@es ;
+    rdfs:label "Quellseite"@de ;
+    rdfs:label "ソースサイト"@ja ;
+    rdfs:comment "Original website where content was sourced"@en .
+
+# -----------------------------------------------------------------------------
+# User Interaction Classes
+# -----------------------------------------------------------------------------
+
+galu:User
+    a owl:Class ;
+    rdfs:label "User"@en ;
+    rdfs:label "Utilisateur"@fr ;
+    rdfs:label "Usuario"@es ;
+    rdfs:label "Benutzer"@de ;
+    rdfs:label "ユーザー"@ja ;
+    rdfs:subClassOf foaf:Person .
+
+galu:Creator
+    a owl:Class ;
+    rdfs:label "Creator"@en ;
+    rdfs:label "Créateur"@fr ;
+    rdfs:label "Creador"@es ;
+    rdfs:label "Ersteller"@de ;
+    rdfs:label "クリエイター"@ja ;
+    rdfs:subClassOf galu:User ;
+    rdfs:comment "Content creator/model"@en .
+
+gal:Comment
+    a owl:Class ;
+    rdfs:label "Comment"@en ;
+    rdfs:label "Commentaire"@fr ;
+    rdfs:label "Comentario"@es ;
+    rdfs:label "Kommentar"@de ;
+    rdfs:label "コメント"@ja ;
+    rdfs:subClassOf schema:Comment .
+
+gal:Rating
+    a owl:Class ;
+    rdfs:label "Rating"@en ;
+    rdfs:label "Note"@fr ;
+    rdfs:label "Puntuación"@es ;
+    rdfs:label "Bewertung"@de ;
+    rdfs:label "評価"@ja ;
+    rdfs:subClassOf schema:Rating .
+
+# -----------------------------------------------------------------------------
+# Streaming Classes
+# -----------------------------------------------------------------------------
+
+gals:StreamingProfile
+    a owl:Class ;
+    rdfs:label "Streaming Profile"@en ;
+    rdfs:label "Profil de Streaming"@fr ;
+    rdfs:label "Perfil de Streaming"@es ;
+    rdfs:label "Streaming-Profil"@de ;
+    rdfs:label "ストリーミングプロフィール"@ja ;
+    rdfs:comment "External streaming platform profile"@en .
+
+gals:StreamingPlatform
+    a owl:Class ;
+    rdfs:label "Streaming Platform"@en ;
+    rdfs:label "Plateforme de Streaming"@fr ;
+    rdfs:label "Plataforma de Streaming"@es ;
+    rdfs:label "Streaming-Plattform"@de ;
+    rdfs:label "ストリーミングプラットフォーム"@ja .
+
+gals:LiveStream
+    a owl:Class ;
+    rdfs:label "Live Stream"@en ;
+    rdfs:label "Diffusion en Direct"@fr ;
+    rdfs:label "Transmisión en Vivo"@es ;
+    rdfs:label "Live-Stream"@de ;
+    rdfs:label "ライブストリーム"@ja ;
+    rdfs:subClassOf gal:MediaItem .
+
+gals:Promo
+    a owl:Class ;
+    rdfs:label "Promo"@en ;
+    rdfs:label "Promo"@fr ;
+    rdfs:label "Promoción"@es ;
+    rdfs:label "Promo"@de ;
+    rdfs:label "プロモ"@ja ;
+    rdfs:comment "Promotional content linking to streaming platforms"@en .
+
+# =============================================================================
+# PROPERTIES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Media Properties
+# -----------------------------------------------------------------------------
+
+gal:hasMediaItem
+    a owl:ObjectProperty ;
+    rdfs:label "has media item"@en ;
+    rdfs:domain gal:Gallery ;
+    rdfs:range gal:MediaItem .
+
+gal:belongsToGallery
+    a owl:ObjectProperty ;
+    rdfs:label "belongs to gallery"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range gal:Gallery ;
+    owl:inverseOf gal:hasMediaItem .
+
+gal:sourceUrl
+    a owl:DatatypeProperty ;
+    rdfs:label "source URL"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:anyURI .
+
+gal:localPath
+    a owl:DatatypeProperty ;
+    rdfs:label "local path"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:string .
+
+gal:thumbnailPath
+    a owl:DatatypeProperty ;
+    rdfs:label "thumbnail path"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:string .
+
+gal:width
+    a owl:DatatypeProperty ;
+    rdfs:label "width"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:integer .
+
+gal:height
+    a owl:DatatypeProperty ;
+    rdfs:label "height"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:integer .
+
+gal:fileSize
+    a owl:DatatypeProperty ;
+    rdfs:label "file size"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:integer .
+
+gal:mimeType
+    a owl:DatatypeProperty ;
+    rdfs:label "MIME type"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:string .
+
+gal:duration
+    a owl:DatatypeProperty ;
+    rdfs:label "duration"@en ;
+    rdfs:domain gal:Video ;
+    rdfs:range xsd:duration .
+
+gal:sortOrder
+    a owl:DatatypeProperty ;
+    rdfs:label "sort order"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:integer .
+
+# -----------------------------------------------------------------------------
+# Organization Properties
+# -----------------------------------------------------------------------------
+
+gal:hasCategory
+    a owl:ObjectProperty ;
+    rdfs:label "has category"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range gal:Category .
+
+gal:parentCategory
+    a owl:ObjectProperty ;
+    rdfs:label "parent category"@en ;
+    rdfs:domain gal:Category ;
+    rdfs:range gal:Category .
+
+gal:hasTag
+    a owl:ObjectProperty ;
+    rdfs:label "has tag"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range gal:Tag .
+
+gal:fromSourceSite
+    a owl:ObjectProperty ;
+    rdfs:label "from source site"@en ;
+    rdfs:domain [ owl:unionOf (gal:MediaItem gal:Gallery) ] ;
+    rdfs:range gal:SourceSite .
+
+gal:siteName
+    a owl:DatatypeProperty ;
+    rdfs:label "site name"@en ;
+    rdfs:domain gal:SourceSite ;
+    rdfs:range xsd:string .
+
+gal:siteUrl
+    a owl:DatatypeProperty ;
+    rdfs:label "site URL"@en ;
+    rdfs:domain gal:SourceSite ;
+    rdfs:range xsd:anyURI .
+
+gal:siteIcon
+    a owl:DatatypeProperty ;
+    rdfs:label "site icon"@en ;
+    rdfs:domain gal:SourceSite ;
+    rdfs:range xsd:anyURI .
+
+# -----------------------------------------------------------------------------
+# User Interaction Properties
+# -----------------------------------------------------------------------------
+
+gal:hasComment
+    a owl:ObjectProperty ;
+    rdfs:label "has comment"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range gal:Comment .
+
+gal:commentedBy
+    a owl:ObjectProperty ;
+    rdfs:label "commented by"@en ;
+    rdfs:domain gal:Comment ;
+    rdfs:range galu:User .
+
+gal:commentText
+    a owl:DatatypeProperty ;
+    rdfs:label "comment text"@en ;
+    rdfs:domain gal:Comment ;
+    rdfs:range xsd:string .
+
+gal:commentDate
+    a owl:DatatypeProperty ;
+    rdfs:label "comment date"@en ;
+    rdfs:domain gal:Comment ;
+    rdfs:range xsd:dateTime .
+
+gal:hasRating
+    a owl:ObjectProperty ;
+    rdfs:label "has rating"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range gal:Rating .
+
+gal:ratedBy
+    a owl:ObjectProperty ;
+    rdfs:label "rated by"@en ;
+    rdfs:domain gal:Rating ;
+    rdfs:range galu:User .
+
+gal:ratingValue
+    a owl:DatatypeProperty ;
+    rdfs:label "rating value"@en ;
+    rdfs:domain gal:Rating ;
+    rdfs:range xsd:decimal .
+
+gal:averageRating
+    a owl:DatatypeProperty ;
+    rdfs:label "average rating"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:decimal .
+
+gal:ratingCount
+    a owl:DatatypeProperty ;
+    rdfs:label "rating count"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:integer .
+
+gal:viewCount
+    a owl:DatatypeProperty ;
+    rdfs:label "view count"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:integer .
+
+gal:likeCount
+    a owl:DatatypeProperty ;
+    rdfs:label "like count"@en ;
+    rdfs:domain gal:MediaItem ;
+    rdfs:range xsd:integer .
+
+# -----------------------------------------------------------------------------
+# Creator Properties
+# -----------------------------------------------------------------------------
+
+gal:createdBy
+    a owl:ObjectProperty ;
+    rdfs:label "created by"@en ;
+    rdfs:domain [ owl:unionOf (gal:MediaItem gal:Gallery) ] ;
+    rdfs:range galu:Creator .
+
+galu:displayName
+    a owl:DatatypeProperty ;
+    rdfs:label "display name"@en ;
+    rdfs:domain galu:User ;
+    rdfs:range xsd:string .
+
+galu:bio
+    a owl:DatatypeProperty ;
+    rdfs:label "biography"@en ;
+    rdfs:domain galu:Creator ;
+    rdfs:range xsd:string .
+
+galu:avatarUrl
+    a owl:DatatypeProperty ;
+    rdfs:label "avatar URL"@en ;
+    rdfs:domain galu:User ;
+    rdfs:range xsd:anyURI .
+
+galu:coverImageUrl
+    a owl:DatatypeProperty ;
+    rdfs:label "cover image URL"@en ;
+    rdfs:domain galu:Creator ;
+    rdfs:range xsd:anyURI .
+
+galu:verified
+    a owl:DatatypeProperty ;
+    rdfs:label "verified"@en ;
+    rdfs:domain galu:Creator ;
+    rdfs:range xsd:boolean .
+
+# -----------------------------------------------------------------------------
+# Streaming Properties
+# -----------------------------------------------------------------------------
+
+gals:hasPlatform
+    a owl:ObjectProperty ;
+    rdfs:label "has platform"@en ;
+    rdfs:domain gals:StreamingProfile ;
+    rdfs:range gals:StreamingPlatform .
+
+gals:profileUrl
+    a owl:DatatypeProperty ;
+    rdfs:label "profile URL"@en ;
+    rdfs:domain gals:StreamingProfile ;
+    rdfs:range xsd:anyURI .
+
+gals:embedUrl
+    a owl:DatatypeProperty ;
+    rdfs:label "embed URL"@en ;
+    rdfs:domain gals:StreamingProfile ;
+    rdfs:range xsd:anyURI .
+
+gals:isLive
+    a owl:DatatypeProperty ;
+    rdfs:label "is live"@en ;
+    rdfs:domain gals:StreamingProfile ;
+    rdfs:range xsd:boolean .
+
+gals:followerCount
+    a owl:DatatypeProperty ;
+    rdfs:label "follower count"@en ;
+    rdfs:domain gals:StreamingProfile ;
+    rdfs:range xsd:integer .
+
+gals:hasStreamingProfile
+    a owl:ObjectProperty ;
+    rdfs:label "has streaming profile"@en ;
+    rdfs:domain galu:Creator ;
+    rdfs:range gals:StreamingProfile .
+
+gals:promoType
+    a owl:DatatypeProperty ;
+    rdfs:label "promo type"@en ;
+    rdfs:domain gals:Promo ;
+    rdfs:range xsd:string .
+
+gals:promoStartDate
+    a owl:DatatypeProperty ;
+    rdfs:label "promo start date"@en ;
+    rdfs:domain gals:Promo ;
+    rdfs:range xsd:dateTime .
+
+gals:promoEndDate
+    a owl:DatatypeProperty ;
+    rdfs:label "promo end date"@en ;
+    rdfs:domain gals:Promo ;
+    rdfs:range xsd:dateTime .
+
+# -----------------------------------------------------------------------------
+# SEO Properties
+# -----------------------------------------------------------------------------
+
+gal:seoTitle
+    a owl:DatatypeProperty ;
+    rdfs:label "SEO title"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range rdf:langString .
+
+gal:seoDescription
+    a owl:DatatypeProperty ;
+    rdfs:label "SEO description"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range rdf:langString .
+
+gal:seoKeywords
+    a owl:DatatypeProperty ;
+    rdfs:label "SEO keywords"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range rdf:langString .
+
+gal:canonicalUrl
+    a owl:DatatypeProperty ;
+    rdfs:label "canonical URL"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:anyURI .
+
+gal:slug
+    a owl:DatatypeProperty ;
+    rdfs:label "URL slug"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+gal:ogImage
+    a owl:DatatypeProperty ;
+    rdfs:label "Open Graph image"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:anyURI .
+
+# -----------------------------------------------------------------------------
+# Import/Migration Properties
+# -----------------------------------------------------------------------------
+
+gali:importedFrom
+    a owl:DatatypeProperty ;
+    rdfs:label "imported from"@en ;
+    rdfs:comment "Source system identifier"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+gali:originalId
+    a owl:DatatypeProperty ;
+    rdfs:label "original ID"@en ;
+    rdfs:comment "ID in the source system"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+gali:importDate
+    a owl:DatatypeProperty ;
+    rdfs:label "import date"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:dateTime .
+
+gali:migrationStatus
+    a owl:DatatypeProperty ;
+    rdfs:label "migration status"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+# =============================================================================
+# MULTILINGUAL SUPPORT
+# =============================================================================
+
+gal:title
+    a owl:DatatypeProperty ;
+    rdfs:label "title"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range rdf:langString .
+
+gal:description
+    a owl:DatatypeProperty ;
+    rdfs:label "description"@en ;
+    rdfs:domain owl:Thing ;
+    rdfs:range rdf:langString .
+
+gal:altText
+    a owl:DatatypeProperty ;
+    rdfs:label "alternative text"@en ;
+    rdfs:domain gal:Image ;
+    rdfs:range rdf:langString .

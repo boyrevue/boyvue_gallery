@@ -1,0 +1,53 @@
+{
+  "name": "gallery-platform",
+  "version": "1.0.0",
+  "description": "Multilingual image/video gallery platform with TTL-driven configuration",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "NODE_ENV=production node src/server.js",
+    "migrate": "node scripts/migrate.js",
+    "import:photopost": "node scripts/import-photopost.js",
+    "generate:schema": "node scripts/generate-schema.js",
+    "validate:ttl": "node scripts/validate-ttl.js",
+    "build:frontend": "vite build",
+    "dev:frontend": "vite"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "mysql2": "^3.6.5",
+    "sharp": "^0.33.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "express-rate-limit": "^7.1.5",
+    "jsonwebtoken": "^9.0.2",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.1",
+    "vite": "^5.0.10",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.56.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "gallery",
+    "rdf",
+    "ttl",
+    "multilingual",
+    "photopost",
+    "streaming"
+  ],
+  "author": "",
+  "license": "MIT"
+}

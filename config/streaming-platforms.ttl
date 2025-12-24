@@ -1,0 +1,200 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix gals: <http://gallery.example.org/streaming#> .
+@prefix galcfg: <http://gallery.example.org/config#> .
+
+# =============================================================================
+# STREAMING PLATFORMS CONFIGURATION
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Platform Definitions
+# -----------------------------------------------------------------------------
+
+gals:chaturbate
+    a gals:StreamingPlatform ;
+    rdfs:label "Chaturbate"@en ;
+    galcfg:platformId "chaturbate" ;
+    galcfg:baseUrl "https://chaturbate.com"^^xsd:anyURI ;
+    galcfg:embedPattern "https://chaturbate.com/embed/{username}/?join_overlay=1&campaign={affiliate}&disable_sound=0&bgcolor=transparent"^^xsd:string ;
+    galcfg:profilePattern "https://chaturbate.com/{username}"^^xsd:anyURI ;
+    galcfg:apiEndpoint "https://chaturbate.com/api/public/affiliates/onlinerooms/"^^xsd:anyURI ;
+    galcfg:embedWidth 640 ;
+    galcfg:embedHeight 480 ;
+    galcfg:supportsEmbed true ;
+    galcfg:supportsApi true ;
+    galcfg:affiliateParam "campaign" ;
+    galcfg:iconClass "icon-chaturbate" ;
+    galcfg:brandColor "#F6A800" ;
+    galcfg:adultContent true .
+
+gals:stripchat
+    a gals:StreamingPlatform ;
+    rdfs:label "Stripchat"@en ;
+    galcfg:platformId "stripchat" ;
+    galcfg:baseUrl "https://stripchat.com"^^xsd:anyURI ;
+    galcfg:embedPattern "https://stripchat.com/embed/{username}"^^xsd:string ;
+    galcfg:profilePattern "https://stripchat.com/{username}"^^xsd:anyURI ;
+    galcfg:embedWidth 640 ;
+    galcfg:embedHeight 480 ;
+    galcfg:supportsEmbed true ;
+    galcfg:supportsApi true ;
+    galcfg:iconClass "icon-stripchat" ;
+    galcfg:brandColor "#FF5C5C" ;
+    galcfg:adultContent true .
+
+gals:bongacams
+    a gals:StreamingPlatform ;
+    rdfs:label "BongaCams"@en ;
+    galcfg:platformId "bongacams" ;
+    galcfg:baseUrl "https://bongacams.com"^^xsd:anyURI ;
+    galcfg:embedPattern "https://bongacams.com/embed/{username}"^^xsd:string ;
+    galcfg:profilePattern "https://bongacams.com/{username}"^^xsd:anyURI ;
+    galcfg:embedWidth 640 ;
+    galcfg:embedHeight 480 ;
+    galcfg:supportsEmbed true ;
+    galcfg:iconClass "icon-bongacams" ;
+    galcfg:brandColor "#E91E63" ;
+    galcfg:adultContent true .
+
+gals:camsoda
+    a gals:StreamingPlatform ;
+    rdfs:label "CamSoda"@en ;
+    galcfg:platformId "camsoda" ;
+    galcfg:baseUrl "https://www.camsoda.com"^^xsd:anyURI ;
+    galcfg:embedPattern "https://www.camsoda.com/embed/{username}"^^xsd:string ;
+    galcfg:profilePattern "https://www.camsoda.com/{username}"^^xsd:anyURI ;
+    galcfg:embedWidth 640 ;
+    galcfg:embedHeight 480 ;
+    galcfg:supportsEmbed true ;
+    galcfg:iconClass "icon-camsoda" ;
+    galcfg:brandColor "#00BCD4" ;
+    galcfg:adultContent true .
+
+gals:livejasmin
+    a gals:StreamingPlatform ;
+    rdfs:label "LiveJasmin"@en ;
+    galcfg:platformId "livejasmin" ;
+    galcfg:baseUrl "https://www.livejasmin.com"^^xsd:anyURI ;
+    galcfg:profilePattern "https://www.livejasmin.com/en/chat/{username}"^^xsd:anyURI ;
+    galcfg:supportsEmbed false ;
+    galcfg:iconClass "icon-livejasmin" ;
+    galcfg:brandColor "#D50000" ;
+    galcfg:adultContent true .
+
+gals:myfreecams
+    a gals:StreamingPlatform ;
+    rdfs:label "MyFreeCams"@en ;
+    galcfg:platformId "myfreecams" ;
+    galcfg:baseUrl "https://www.myfreecams.com"^^xsd:anyURI ;
+    galcfg:embedPattern "https://www.myfreecams.com/embed/{username}"^^xsd:string ;
+    galcfg:profilePattern "https://profiles.myfreecams.com/{username}"^^xsd:anyURI ;
+    galcfg:embedWidth 640 ;
+    galcfg:embedHeight 480 ;
+    galcfg:supportsEmbed true ;
+    galcfg:iconClass "icon-myfreecams" ;
+    galcfg:brandColor "#CC0000" ;
+    galcfg:adultContent true .
+
+gals:cam4
+    a gals:StreamingPlatform ;
+    rdfs:label "CAM4"@en ;
+    galcfg:platformId "cam4" ;
+    galcfg:baseUrl "https://www.cam4.com"^^xsd:anyURI ;
+    galcfg:embedPattern "https://www.cam4.com/embed/{username}"^^xsd:string ;
+    galcfg:profilePattern "https://www.cam4.com/{username}"^^xsd:anyURI ;
+    galcfg:embedWidth 640 ;
+    galcfg:embedHeight 480 ;
+    galcfg:supportsEmbed true ;
+    galcfg:iconClass "icon-cam4" ;
+    galcfg:brandColor "#FF6600" ;
+    galcfg:adultContent true .
+
+gals:flirt4free
+    a gals:StreamingPlatform ;
+    rdfs:label "Flirt4Free"@en ;
+    galcfg:platformId "flirt4free" ;
+    galcfg:baseUrl "https://www.flirt4free.com"^^xsd:anyURI ;
+    galcfg:profilePattern "https://www.flirt4free.com/live/girls/{username}"^^xsd:anyURI ;
+    galcfg:supportsEmbed false ;
+    galcfg:iconClass "icon-flirt4free" ;
+    galcfg:brandColor "#8E24AA" ;
+    galcfg:adultContent true .
+
+# -----------------------------------------------------------------------------
+# Embed Configuration Settings
+# -----------------------------------------------------------------------------
+
+galcfg:StreamingEmbedConfig
+    a rdfs:Class ;
+    rdfs:label "Streaming Embed Configuration"@en .
+
+galcfg:defaultEmbedConfig
+    a galcfg:StreamingEmbedConfig ;
+    galcfg:defaultWidth 640 ;
+    galcfg:defaultHeight 480 ;
+    galcfg:responsiveEnabled true ;
+    galcfg:autoplayEnabled false ;
+    galcfg:mutedByDefault true ;
+    galcfg:showControls true ;
+    galcfg:allowFullscreen true ;
+    galcfg:lazyLoadEnabled true ;
+    galcfg:placeholderImage "/assets/streaming-placeholder.webp"^^xsd:anyURI ;
+    galcfg:offlineMessage "offline_message"@en .
+
+# -----------------------------------------------------------------------------
+# Promo Types
+# -----------------------------------------------------------------------------
+
+gals:PromoType
+    a rdfs:Class ;
+    rdfs:label "Promo Type"@en .
+
+gals:featuredPromo
+    a gals:PromoType ;
+    rdfs:label "Featured"@en ;
+    rdfs:label "En Vedette"@fr ;
+    rdfs:label "Destacado"@es ;
+    rdfs:label "Empfohlen"@de ;
+    galcfg:priority 1 ;
+    galcfg:displayPosition "hero" .
+
+gals:sidebarPromo
+    a gals:PromoType ;
+    rdfs:label "Sidebar"@en ;
+    rdfs:label "Barre Latérale"@fr ;
+    rdfs:label "Barra Lateral"@es ;
+    rdfs:label "Seitenleiste"@de ;
+    galcfg:priority 2 ;
+    galcfg:displayPosition "sidebar" .
+
+gals:inlinePromo
+    a gals:PromoType ;
+    rdfs:label "Inline"@en ;
+    rdfs:label "En Ligne"@fr ;
+    rdfs:label "En Línea"@es ;
+    rdfs:label "Inline"@de ;
+    galcfg:priority 3 ;
+    galcfg:displayPosition "inline" .
+
+gals:footerPromo
+    a gals:PromoType ;
+    rdfs:label "Footer"@en ;
+    rdfs:label "Pied de Page"@fr ;
+    rdfs:label "Pie de Página"@es ;
+    rdfs:label "Fußzeile"@de ;
+    galcfg:priority 4 ;
+    galcfg:displayPosition "footer" .
+
+# -----------------------------------------------------------------------------
+# API Rate Limiting Configuration
+# -----------------------------------------------------------------------------
+
+galcfg:apiRateLimits
+    a galcfg:RateLimitConfig ;
+    galcfg:maxRequestsPerMinute 60 ;
+    galcfg:maxRequestsPerHour 1000 ;
+    galcfg:cacheTimeout 300 ;
+    galcfg:retryAttempts 3 ;
+    galcfg:retryDelayMs 1000 .
