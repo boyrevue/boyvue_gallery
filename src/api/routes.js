@@ -1,5 +1,6 @@
 import express from 'express';
 import pg from 'pg';
+import geoip from 'geoip-lite';
 const { Pool } = pg;
 
 const router = express.Router();
@@ -12,30 +13,50 @@ const pool = new Pool({
   password: 'apple1apple'
 });
 
-// Simple translation using Google Translate URL hack (free)
-async function translateText(text, lang) {
-  if (!text || lang === 'en') return text;
+// Country to language mapping
+const countryToLang = {
+  US: 'en', GB: 'en', AU: 'en', CA: 'en', NZ: 'en', IE: 'en',
+  DE: 'de', AT: 'de', CH: 'de',
+  RU: 'ru', BY: 'ru', KZ: 'ru', UA: 'ru',
+  ES: 'es', MX: 'es', AR: 'es', CO: 'es', CL: 'es', PE: 'es',
+  CN: 'zh', TW: 'zh', HK: 'zh', SG: 'zh',
+  JP: 'ja',
+  TH: 'th',
+  KR: 'ko',
+  BR: 'pt', PT: 'pt',
+  FR: 'fr', BE: 'fr',
+  IT: 'it',
+  NL: 'nl',
+  PL: 'pl',
+  CZ: 'cs', SK: 'cs',
+  SA: 'ar', AE: 'ar', EG: 'ar', MA: 'ar', DZ: 'ar', IQ: 'ar', JO: 'ar', KW: 'ar', LB: 'ar', QA: 'ar',
+  GR: 'el', CY: 'el',
+  VN: 'vi',
+  ID: 'id', MY: 'id',
+  TR: 'tr',
+  HU: 'hu'
+};
+
+// Detect language from IP
+router.get('/detect-language', (req, res) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+  const cleanIp = ip?.replace('::ffff:', '') || '';
+  
+  let lang = 'en';
+  let country = 'US';
+  
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    return data[0]?.map(x => x[0]).join('') || text;
+    const geo = geoip.lookup(cleanIp);
+    if (geo && geo.country) {
+      country = geo.country;
+      lang = countryToLang[country] || 'en';
+    }
   } catch (e) {
-    return text;
+    console.error('GeoIP error:', e);
   }
-}
-
-// Translation cache (in-memory)
-const transCache = new Map();
-
-async function cachedTranslate(text, lang) {
-  if (!text || lang === 'en') return text;
-  const key = `${lang}:${text.substring(0, 100)}`;
-  if (transCache.has(key)) return transCache.get(key);
-  const translated = await translateText(text, lang);
-  transCache.set(key, translated);
-  return translated;
-}
+  
+  res.json({ lang, country, ip: cleanIp });
+});
 
 // Stats
 router.get('/stats', async (req, res) => {
@@ -55,24 +76,13 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// Categories with translation
+// Categories
 router.get('/categories', async (req, res) => {
   try {
-    const lang = req.query.lang || 'en';
     const result = await pool.query(`
       SELECT id, catname, description, parent_category, photo_count
       FROM category WHERE photo_count > 0 ORDER BY photo_count DESC
     `);
-    
-    // Translate if not English
-    if (lang !== 'en') {
-      for (let cat of result.rows) {
-        if (cat.description) {
-          cat.description = await cachedTranslate(cat.description, lang);
-        }
-      }
-    }
-    
     res.json({ categories: result.rows });
   } catch(e) {
     res.status(500).json({ error: e.message });
@@ -81,36 +91,21 @@ router.get('/categories', async (req, res) => {
 
 router.get('/categories/:id', async (req, res) => {
   try {
-    const lang = req.query.lang || 'en';
     const cat = await pool.query('SELECT * FROM category WHERE id = $1', [req.params.id]);
     if (cat.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-    
     const images = await pool.query(
       'SELECT id, title, description, local_path, thumbnail_path, width, height, view_count, average_rating FROM image WHERE belongs_to_gallery = $1 ORDER BY view_count DESC LIMIT 50',
       [req.params.id]
     );
-    
-    // Translate if not English
-    if (lang !== 'en') {
-      if (cat.rows[0].description) {
-        cat.rows[0].description = await cachedTranslate(cat.rows[0].description, lang);
-      }
-      for (let img of images.rows) {
-        if (img.title) img.title = await cachedTranslate(img.title, lang);
-        if (img.description) img.description = await cachedTranslate(img.description, lang);
-      }
-    }
-    
     res.json({ category: cat.rows[0], images: images.rows });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Media with translation
+// Media
 router.get('/media', async (req, res) => {
   try {
-    const lang = req.query.lang || 'en';
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const offset = (page - 1) * limit;
@@ -135,13 +130,6 @@ router.get('/media', async (req, res) => {
     const countResult = await pool.query(countQuery, cat ? [cat] : []);
     const total = parseInt(countResult.rows[0].count);
 
-    // Translate if not English
-    if (lang !== 'en') {
-      for (let img of result.rows) {
-        if (img.title) img.title = await cachedTranslate(img.title, lang);
-      }
-    }
-
     res.json({
       images: result.rows,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) }
@@ -153,7 +141,6 @@ router.get('/media', async (req, res) => {
 
 router.get('/media/:id', async (req, res) => {
   try {
-    const lang = req.query.lang || 'en';
     const result = await pool.query(`
       SELECT i.*, c.catname as category_name FROM image i
       LEFT JOIN category c ON i.belongs_to_gallery = c.id WHERE i.id = $1
@@ -167,39 +154,19 @@ router.get('/media/:id', async (req, res) => {
       [result.rows[0].belongs_to_gallery, req.params.id]
     );
     
-    const img = result.rows[0];
-    
-    // Translate if not English
-    if (lang !== 'en') {
-      if (img.title) img.title = await cachedTranslate(img.title, lang);
-      if (img.description) img.description = await cachedTranslate(img.description, lang);
-      for (let r of related.rows) {
-        if (r.title) r.title = await cachedTranslate(r.title, lang);
-      }
-    }
-    
-    res.json({ ...img, related: related.rows });
+    res.json({ ...result.rows[0], related: related.rows });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Comments with translation
+// Comments
 router.get('/media/:id/comments', async (req, res) => {
   try {
-    const lang = req.query.lang || 'en';
     const result = await pool.query(
       'SELECT id, username, comment_text, created_at FROM comments WHERE photo_id = $1 ORDER BY created_at DESC LIMIT 100',
       [req.params.id]
     );
-    
-    // Translate comments if not English
-    if (lang !== 'en') {
-      for (let c of result.rows) {
-        if (c.comment_text) c.comment_text = await cachedTranslate(c.comment_text, lang);
-      }
-    }
-    
     res.json({ comments: result.rows });
   } catch(e) {
     res.status(500).json({ error: e.message });
@@ -221,10 +188,9 @@ router.post('/media/:id/comments', async (req, res) => {
   }
 });
 
-// Search with translation
+// Search
 router.get('/search', async (req, res) => {
   try {
-    const lang = req.query.lang || 'en';
     const q = req.query.q || '';
     const limit = parseInt(req.query.limit) || 12;
     const result = await pool.query(`
@@ -233,14 +199,6 @@ router.get('/search', async (req, res) => {
       WHERE i.title ILIKE $1 OR i.description ILIKE $1 OR c.catname ILIKE $1
       ORDER BY i.view_count DESC LIMIT $2
     `, ['%' + q + '%', limit]);
-    
-    // Translate if not English
-    if (lang !== 'en') {
-      for (let img of result.rows) {
-        if (img.title) img.title = await cachedTranslate(img.title, lang);
-      }
-    }
-    
     res.json({ query: q, results: result.rows });
   } catch(e) {
     res.status(500).json({ error: e.message });
