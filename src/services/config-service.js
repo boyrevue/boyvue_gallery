@@ -4,7 +4,7 @@
  * All configuration values are derived from TTL - no hardcoding
  */
 
-import { loadTTL, mergeGraphs, NAMESPACES } from './ttl-parser.js';
+import { loadTTL, mergeGraphs, NAMESPACES } from '../utils/ttl-parser.js';
 
 // Environment variable interpolation regex
 const ENV_VAR_REGEX = /\$\{([^}]+)\}/g;

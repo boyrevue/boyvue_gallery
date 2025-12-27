@@ -57,8 +57,8 @@ class DatabaseService {
       port: config.port,
       database: config.name,
       user: config.user,
-      password: config.password,
-      ssl: config.ssl,
+      password: String(config.password || ''),
+      ssl: config.ssl === true || config.ssl === "true" ? { rejectUnauthorized: false } : false,
       min: config.poolMin || 5,
       max: config.poolMax || 20,
       idleTimeoutMillis: config.idleTimeout || 30000
@@ -260,7 +260,7 @@ class DatabaseService {
   /**
    * Generate CREATE TABLE SQL
    */
-  generateCreateTableSQL(table) {
+  generateCreateTableSQL(table, includeForeignKeys = true) {
     const columnDefs = table.columns.map(col => {
       let def = `  "${col.name}" ${col.type}`;
       if (col.primaryKey) def += ' PRIMARY KEY';
@@ -269,9 +269,9 @@ class DatabaseService {
       return def;
     }).join(',\n');
 
-    const foreignKeyDefs = table.foreignKeys.map(fk => 
+    const foreignKeyDefs = includeForeignKeys ? table.foreignKeys.map(fk => 
       `  FOREIGN KEY ("${fk.column}") REFERENCES "${fk.references.table}"("${fk.references.column}")`
-    ).join(',\n');
+    ).join(',\n') : '';
 
     let sql = `CREATE TABLE IF NOT EXISTS "${table.name}" (\n${columnDefs}`;
     
@@ -321,13 +321,21 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 `;
 
+    // First pass: Create all tables WITHOUT foreign keys
     for (const table of this.schema.tables) {
       sql += `\n-- Table: ${table.name} (from ${table.classUri})\n`;
-      sql += this.generateCreateTableSQL(table);
+      sql += this.generateCreateTableSQL(table, false); // false = no foreign keys
       sql += '\n\n';
     }
 
-    sql += 'COMMIT;\n';
+    // Second pass: Add all foreign keys
+    for (const table of this.schema.tables) {
+      for (const fk of table.foreignKeys) {
+        sql += `ALTER TABLE "${table.name}" ADD CONSTRAINT "fk_${table.name}_${fk.column}" FOREIGN KEY ("${fk.column}") REFERENCES "${fk.references.table}"("${fk.references.column}");\n`;
+      }
+    }
+
+    sql += '\nCOMMIT;\n';
 
     return sql;
   }
@@ -468,11 +476,14 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
    * Convert camelCase/PascalCase to snake_case
    */
   toSnakeCase(str) {
+    if (!str) return '';
     return str
-      .replace(/([A-Z])/g, '_$1')
-      .toLowerCase()
-      .replace(/^_/, '')
-      .replace(/-/g, '_');
+      .replace(/([a-z])([A-Z])/g, '$1_$2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+      .replace(/[\s-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '')
+      .toLowerCase();
   }
 
   /**
