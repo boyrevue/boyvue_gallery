@@ -1,8 +1,11 @@
 import express from 'express';
 import pg from 'pg';
-import geoip from 'geoip-lite';
-const { Pool } = pg;
+import fs from 'fs';
+import path from 'path';
+import { URL } from 'url';
+import https from 'https';
 
+const { Pool } = pg;
 const router = express.Router();
 
 const pool = new Pool({
@@ -13,49 +16,269 @@ const pool = new Pool({
   password: 'apple1apple'
 });
 
+// Translation cache (in-memory + database)
+const translationCache = new Map();
+
+// Google Translate (free method)
+async function translateText(text, targetLang) {
+  if (!text || targetLang === 'en') return text;
+  
+  const cacheKey = `${text}:${targetLang}`;
+  if (translationCache.has(cacheKey)) {
+    return translationCache.get(cacheKey);
+  }
+  
+  // Check database cache
+  try {
+    const cached = await pool.query(
+      'SELECT translated_text FROM translations_cache WHERE original_text = $1 AND target_lang = $2',
+      [text.substring(0, 500), targetLang]
+    );
+    if (cached.rows.length > 0) {
+      translationCache.set(cacheKey, cached.rows[0].translated_text);
+      return cached.rows[0].translated_text;
+    }
+  } catch(e) {}
+  
+  return new Promise((resolve) => {
+    const encodedText = encodeURIComponent(text);
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodedText}`;
+    
+    https.get(url, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', async () => {
+        try {
+          const result = JSON.parse(data);
+          const translated = result[0].map(x => x[0]).join('');
+          translationCache.set(cacheKey, translated);
+          
+          // Save to database
+          await pool.query(
+            'INSERT INTO translations_cache (original_text, translated_text, target_lang) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+            [text.substring(0, 500), translated.substring(0, 1000), targetLang]
+          );
+          
+          resolve(translated);
+        } catch(e) {
+          resolve(text);
+        }
+      });
+    }).on('error', () => resolve(text));
+    
+    setTimeout(() => resolve(text), 3000);
+  });
+}
+
+// Translate multiple texts
+async function translateBatch(texts, targetLang) {
+  if (targetLang === 'en') return texts;
+  return Promise.all(texts.map(t => translateText(t, targetLang)));
+}
+
+// Learn keywords from search terms
+async function learnKeywords(imageId, searchQuery, source = 'search_engine') {
+  if (!imageId || !searchQuery) return;
+  
+  // Extract keywords from search query
+  const keywords = searchQuery.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+  
+  for (const keyword of keywords) {
+    try {
+      await pool.query(`
+        INSERT INTO image_keywords (image_id, keyword, source, weight)
+        VALUES ($1, $2, $3, 1)
+        ON CONFLICT (image_id, keyword, language) 
+        DO UPDATE SET weight = image_keywords.weight + 1
+      `, [imageId, keyword, source]);
+    } catch(e) {}
+  }
+}
+
+// Get enhanced keywords for an image
+async function getImageKeywords(imageId) {
+  try {
+    const result = await pool.query(
+      'SELECT keyword, weight FROM image_keywords WHERE image_id = $1 ORDER BY weight DESC LIMIT 20',
+      [imageId]
+    );
+    return result.rows.map(r => r.keyword);
+  } catch(e) {
+    return [];
+  }
+}
+
 // Country to language mapping
 const countryToLang = {
   US: 'en', GB: 'en', AU: 'en', CA: 'en', NZ: 'en', IE: 'en',
-  DE: 'de', AT: 'de', CH: 'de',
-  RU: 'ru', BY: 'ru', KZ: 'ru', UA: 'ru',
+  DE: 'de', AT: 'de', CH: 'de', RU: 'ru', BY: 'ru', KZ: 'ru', UA: 'ru',
   ES: 'es', MX: 'es', AR: 'es', CO: 'es', CL: 'es', PE: 'es',
-  CN: 'zh', TW: 'zh', HK: 'zh', SG: 'zh',
-  JP: 'ja',
-  TH: 'th',
-  KR: 'ko',
-  BR: 'pt', PT: 'pt',
-  FR: 'fr', BE: 'fr',
-  IT: 'it',
-  NL: 'nl',
-  PL: 'pl',
-  CZ: 'cs', SK: 'cs',
-  SA: 'ar', AE: 'ar', EG: 'ar', MA: 'ar', DZ: 'ar', IQ: 'ar', JO: 'ar', KW: 'ar', LB: 'ar', QA: 'ar',
-  GR: 'el', CY: 'el',
-  VN: 'vi',
-  ID: 'id', MY: 'id',
-  TR: 'tr',
-  HU: 'hu'
+  CN: 'zh', TW: 'zh', HK: 'zh', SG: 'zh', JP: 'ja', TH: 'th', KR: 'ko',
+  BR: 'pt', PT: 'pt', FR: 'fr', BE: 'fr', IT: 'it', NL: 'nl', PL: 'pl',
+  CZ: 'cs', SK: 'cs', SA: 'ar', AE: 'ar', EG: 'ar', GR: 'el', TR: 'tr',
+  VN: 'vi', ID: 'id', MY: 'id', HU: 'hu', PH: 'en', IN: 'en'
 };
 
-// Detect language from IP
-router.get('/detect-language', (req, res) => {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
-  const cleanIp = ip?.replace('::ffff:', '') || '';
-  
-  let lang = 'en';
-  let country = 'US';
-  
-  try {
-    const geo = geoip.lookup(cleanIp);
-    if (geo && geo.country) {
-      country = geo.country;
-      lang = countryToLang[country] || 'en';
-    }
-  } catch (e) {
-    console.error('GeoIP error:', e);
+let geoip = null;
+try { geoip = await import('geoip-lite'); } catch(e) {}
+
+// Search engine patterns
+const searchEngines = {
+  'google': /google\.[a-z.]+\/(search|url)\?.*[?&](q|url)=([^&]+)/i,
+  'bing': /bing\.com\/search\?.*q=([^&]+)/i,
+  'yahoo': /search\.yahoo\.com\/search.*p=([^&]+)/i,
+  'duckduckgo': /duckduckgo\.com\/\?.*q=([^&]+)/i,
+  'yandex': /yandex\.[a-z]+\/search.*text=([^&]+)/i
+};
+
+const competitorDomains = [
+  'pornhub.com', 'xvideos.com', 'xhamster.com', 'redtube.com',
+  'xnxx.com', 'spankbang.com', 'gaymaletube.com', 'boyfriendtv.com',
+  'gaytube.com', 'xtube.com', 'thisvid.com', 'reddit.com', 'twitter.com', 'x.com', 'tumblr.com'
+];
+
+function getGeoInfo(req) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress?.replace('::ffff:', '') || '';
+  let country = 'XX';
+  if (geoip?.default) {
+    const geo = geoip.default.lookup(ip);
+    if (geo) country = geo.country || 'XX';
   }
-  
-  res.json({ lang, country, ip: cleanIp });
+  return { ip, country };
+}
+
+function extractSearchQuery(referer) {
+  for (const [engine, pattern] of Object.entries(searchEngines)) {
+    const match = referer.match(pattern);
+    if (match) {
+      const queryPart = match[3] || match[1];
+      try {
+        return { engine, query: decodeURIComponent(queryPart.replace(/\+/g, ' ')) };
+      } catch (e) {
+        return { engine, query: queryPart.replace(/\+/g, ' ') };
+      }
+    }
+  }
+  return null;
+}
+
+function getDomain(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./, '');
+  } catch (e) {
+    return null;
+  }
+}
+
+async function trackVisit(req, page, imageId = null) {
+  try {
+    const { ip, country } = getGeoInfo(req);
+    const ua = req.headers['user-agent'] || '';
+    const referer = req.headers['referer'] || '';
+    
+    await pool.query(
+      'INSERT INTO analytics (ip, country, city, page, user_agent, referer) VALUES ($1, $2, $3, $4, $5, $6)',
+      [ip, country, '', page, ua.substring(0, 500), referer.substring(0, 500)]
+    );
+    
+    if (referer) {
+      const searchInfo = extractSearchQuery(referer);
+      if (searchInfo) {
+        await pool.query(
+          'INSERT INTO search_engine_referrals (engine, search_query, landing_page, ip, country) VALUES ($1, $2, $3, $4, $5)',
+          [searchInfo.engine, searchInfo.query.substring(0, 500), page, ip, country]
+        );
+        
+        // Learn keywords from search query for this image
+        if (imageId) {
+          learnKeywords(imageId, searchInfo.query, 'search_engine');
+        }
+        
+        const hasContent = await pool.query(
+          "SELECT COUNT(*) FROM image WHERE title ILIKE $1 OR description ILIKE $1",
+          ['%' + searchInfo.query + '%']
+        );
+        
+        await pool.query(
+          `INSERT INTO content_demand (term, source, has_content, last_searched)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (term) DO UPDATE SET 
+             search_count = content_demand.search_count + 1,
+             has_content = $3,
+             last_searched = NOW()`,
+          [searchInfo.query.toLowerCase().substring(0, 255), searchInfo.engine, parseInt(hasContent.rows[0].count) > 0]
+        );
+      }
+      
+      const domain = getDomain(referer);
+      if (domain && !domain.includes('boyvue.com')) {
+        await pool.query(
+          'INSERT INTO external_referrers (referrer_domain, referrer_url, landing_page, ip, country) VALUES ($1, $2, $3, $4, $5)',
+          [domain, referer.substring(0, 1000), page, ip, country]
+        );
+      }
+    }
+  } catch(e) {}
+}
+
+async function logSearch(req, query, resultsCount) {
+  try {
+    const { ip, country } = getGeoInfo(req);
+    await pool.query(
+      'INSERT INTO search_logs (query, ip, country, results_count) VALUES ($1, $2, $3, $4)',
+      [query.substring(0, 255), ip, country, resultsCount]
+    );
+  } catch(e) {}
+}
+
+// UI translations
+const uiTranslations = {
+  en: { views: 'views', rating: 'rating', video: 'VIDEO', comments: 'comments', relatedIn: 'Related in', home: 'Home', untitled: 'Untitled', allImages: 'All Images', categories: 'Categories', search: 'Search', loading: 'Loading...', noComments: 'No comments yet', writeComment: 'Write a comment...', yourName: 'Your name', postComment: 'Post Comment', prev: 'Previous', next: 'Next', page: 'Page', of: 'of' },
+  es: { views: 'vistas', rating: 'nota', video: 'VIDEO', comments: 'comentarios', relatedIn: 'Relacionado en', home: 'Inicio', untitled: 'Sin título', allImages: 'Todas', categories: 'Categorías', search: 'Buscar', loading: 'Cargando...', noComments: 'Sin comentarios', writeComment: 'Escribe un comentario...', yourName: 'Tu nombre', postComment: 'Comentar', prev: 'Anterior', next: 'Siguiente', page: 'Página', of: 'de' },
+  de: { views: 'Aufrufe', rating: 'Bewertung', video: 'VIDEO', comments: 'Kommentare', relatedIn: 'Ähnlich in', home: 'Startseite', untitled: 'Ohne Titel', allImages: 'Alle Bilder', categories: 'Kategorien', search: 'Suchen', loading: 'Laden...', noComments: 'Keine Kommentare', writeComment: 'Kommentar schreiben...', yourName: 'Dein Name', postComment: 'Kommentieren', prev: 'Zurück', next: 'Weiter', page: 'Seite', of: 'von' },
+  fr: { views: 'vues', rating: 'note', video: 'VIDÉO', comments: 'commentaires', relatedIn: 'Similaire dans', home: 'Accueil', untitled: 'Sans titre', allImages: 'Toutes', categories: 'Catégories', search: 'Rechercher', loading: 'Chargement...', noComments: 'Aucun commentaire', writeComment: 'Écrire un commentaire...', yourName: 'Votre nom', postComment: 'Commenter', prev: 'Précédent', next: 'Suivant', page: 'Page', of: 'sur' },
+  pt: { views: 'visualizações', rating: 'nota', video: 'VÍDEO', comments: 'comentários', relatedIn: 'Relacionado em', home: 'Início', untitled: 'Sem título', allImages: 'Todas', categories: 'Categorias', search: 'Buscar', loading: 'Carregando...', noComments: 'Sem comentários', writeComment: 'Escreva um comentário...', yourName: 'Seu nome', postComment: 'Comentar', prev: 'Anterior', next: 'Próximo', page: 'Página', of: 'de' },
+  ru: { views: 'просмотров', rating: 'рейтинг', video: 'ВИДЕО', comments: 'комментарии', relatedIn: 'Похожее в', home: 'Главная', untitled: 'Без названия', allImages: 'Все', categories: 'Категории', search: 'Поиск', loading: 'Загрузка...', noComments: 'Нет комментариев', writeComment: 'Написать комментарий...', yourName: 'Ваше имя', postComment: 'Отправить', prev: 'Назад', next: 'Далее', page: 'Страница', of: 'из' },
+  zh: { views: '次观看', rating: '评分', video: '视频', comments: '评论', relatedIn: '相关内容', home: '首页', untitled: '无标题', allImages: '全部', categories: '分类', search: '搜索', loading: '加载中...', noComments: '暂无评论', writeComment: '写评论...', yourName: '你的名字', postComment: '发表评论', prev: '上一页', next: '下一页', page: '第', of: '页，共' },
+  ja: { views: '回視聴', rating: '評価', video: '動画', comments: 'コメント', relatedIn: '関連', home: 'ホーム', untitled: '無題', allImages: 'すべて', categories: 'カテゴリ', search: '検索', loading: '読み込み中...', noComments: 'コメントなし', writeComment: 'コメントを書く...', yourName: '名前', postComment: '投稿', prev: '前へ', next: '次へ', page: 'ページ', of: '/' },
+  ko: { views: '조회', rating: '평점', video: '동영상', comments: '댓글', relatedIn: '관련 콘텐츠', home: '홈', untitled: '제목 없음', allImages: '전체', categories: '카테고리', search: '검색', loading: '로딩...', noComments: '댓글 없음', writeComment: '댓글 작성...', yourName: '이름', postComment: '게시', prev: '이전', next: '다음', page: '페이지', of: '/' },
+  th: { views: 'การดู', rating: 'คะแนน', video: 'วิดีโอ', comments: 'ความคิดเห็น', relatedIn: 'ที่เกี่ยวข้อง', home: 'หน้าแรก', untitled: 'ไม่มีชื่อ', allImages: 'ทั้งหมด', categories: 'หมวดหมู่', search: 'ค้นหา', loading: 'กำลังโหลด...', noComments: 'ไม่มีความคิดเห็น', writeComment: 'เขียนความคิดเห็น...', yourName: 'ชื่อของคุณ', postComment: 'โพสต์', prev: 'ก่อนหน้า', next: 'ถัดไป', page: 'หน้า', of: 'จาก' },
+  it: { views: 'visualizzazioni', rating: 'voto', video: 'VIDEO', comments: 'commenti', relatedIn: 'Correlati in', home: 'Home', untitled: 'Senza titolo', allImages: 'Tutte', categories: 'Categorie', search: 'Cerca', loading: 'Caricamento...', noComments: 'Nessun commento', writeComment: 'Scrivi un commento...', yourName: 'Il tuo nome', postComment: 'Pubblica', prev: 'Precedente', next: 'Successivo', page: 'Pagina', of: 'di' },
+  nl: { views: 'weergaven', rating: 'beoordeling', video: 'VIDEO', comments: 'reacties', relatedIn: 'Gerelateerd in', home: 'Home', untitled: 'Naamloos', allImages: 'Alle', categories: 'Categorieën', search: 'Zoeken', loading: 'Laden...', noComments: 'Geen reacties', writeComment: 'Schrijf een reactie...', yourName: 'Je naam', postComment: 'Plaatsen', prev: 'Vorige', next: 'Volgende', page: 'Pagina', of: 'van' },
+  pl: { views: 'wyświetleń', rating: 'ocena', video: 'WIDEO', comments: 'komentarze', relatedIn: 'Powiązane w', home: 'Strona główna', untitled: 'Bez tytułu', allImages: 'Wszystkie', categories: 'Kategorie', search: 'Szukaj', loading: 'Ładowanie...', noComments: 'Brak komentarzy', writeComment: 'Napisz komentarz...', yourName: 'Twoje imię', postComment: 'Opublikuj', prev: 'Poprzednia', next: 'Następna', page: 'Strona', of: 'z' },
+  tr: { views: 'görüntüleme', rating: 'puan', video: 'VİDEO', comments: 'yorumlar', relatedIn: 'İlgili', home: 'Ana sayfa', untitled: 'Başlıksız', allImages: 'Tümü', categories: 'Kategoriler', search: 'Ara', loading: 'Yükleniyor...', noComments: 'Yorum yok', writeComment: 'Yorum yaz...', yourName: 'Adınız', postComment: 'Gönder', prev: 'Önceki', next: 'Sonraki', page: 'Sayfa', of: '/' },
+  ar: { views: 'مشاهدات', rating: 'تقييم', video: 'فيديو', comments: 'تعليقات', relatedIn: 'ذات صلة', home: 'الرئيسية', untitled: 'بدون عنوان', allImages: 'الكل', categories: 'الأقسام', search: 'بحث', loading: 'جاري التحميل...', noComments: 'لا توجد تعليقات', writeComment: 'اكتب تعليقاً...', yourName: 'اسمك', postComment: 'نشر', prev: 'السابق', next: 'التالي', page: 'صفحة', of: 'من' }
+};
+
+// Detect language endpoint
+router.get('/detect-language', async (req, res) => {
+  const { ip, country } = getGeoInfo(req);
+  const lang = countryToLang[country] || 'en';
+  trackVisit(req, 'home');
+  res.json({ lang, country, ip });
+});
+
+// Get UI translations
+router.get('/ui-translations/:lang', (req, res) => {
+  const lang = req.params.lang;
+  res.json(uiTranslations[lang] || uiTranslations.en);
+});
+
+// Video thumbnails
+router.get('/video-thumbs/:id', (req, res) => {
+  const thumbDir = `/var/www/html/bp/data/video-thumbs/${req.params.id}`;
+  const thumbs = [];
+  if (fs.existsSync(thumbDir)) {
+    for (let i = 0; i < 5; i++) {
+      const thumbPath = path.join(thumbDir, `thumb_${i}.jpg`);
+      if (fs.existsSync(thumbPath)) thumbs.push(`/media/video-thumbs/${req.params.id}/thumb_${i}.jpg`);
+    }
+  }
+  res.json({ thumbs });
 });
 
 // Stats
@@ -76,14 +299,24 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// Categories
+// Categories with translation
 router.get('/categories', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const result = await pool.query(`
       SELECT id, catname, description, parent_category, photo_count
       FROM category WHERE photo_count > 0 ORDER BY photo_count DESC
     `);
-    res.json({ categories: result.rows });
+    
+    let categories = result.rows;
+    
+    // Translate category names if not English
+    if (lang !== 'en') {
+      const translatedNames = await translateBatch(categories.map(c => c.catname), lang);
+      categories = categories.map((c, i) => ({ ...c, catname: translatedNames[i] }));
+    }
+    
+    res.json({ categories });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -91,21 +324,44 @@ router.get('/categories', async (req, res) => {
 
 router.get('/categories/:id', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
+    trackVisit(req, `category/${req.params.id}`);
+    
     const cat = await pool.query('SELECT * FROM category WHERE id = $1', [req.params.id]);
     if (cat.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    
     const images = await pool.query(
       'SELECT id, title, description, local_path, thumbnail_path, width, height, view_count, average_rating FROM image WHERE belongs_to_gallery = $1 ORDER BY view_count DESC LIMIT 50',
       [req.params.id]
     );
-    res.json({ category: cat.rows[0], images: images.rows });
+    
+    let category = cat.rows[0];
+    let imageList = images.rows;
+    
+    // Translate if not English
+    if (lang !== 'en') {
+      category.catname = await translateText(category.catname, lang);
+      if (category.description) {
+        category.description = await translateText(category.description, lang);
+      }
+      
+      // Translate image titles (batch for performance)
+      const translatedTitles = await translateBatch(imageList.map(i => i.title || ''), lang);
+      imageList = imageList.map((img, i) => ({ ...img, title: translatedTitles[i] || img.title }));
+    }
+    
+    res.json({ category, images: imageList });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Media
+// Media list with translation
 router.get('/media', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
+    trackVisit(req, `gallery/page/${req.query.page || 1}`);
+    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const offset = (page - 1) * limit;
@@ -129,9 +385,22 @@ router.get('/media', async (req, res) => {
     const result = await pool.query(query, params);
     const countResult = await pool.query(countQuery, cat ? [cat] : []);
     const total = parseInt(countResult.rows[0].count);
+    
+    let imageList = result.rows;
+    
+    // Translate if not English
+    if (lang !== 'en') {
+      const translatedTitles = await translateBatch(imageList.map(i => i.title || ''), lang);
+      const translatedCategories = await translateBatch(imageList.map(i => i.category_name || ''), lang);
+      imageList = imageList.map((img, i) => ({
+        ...img,
+        title: translatedTitles[i] || img.title,
+        category_name: translatedCategories[i] || img.category_name
+      }));
+    }
 
     res.json({
-      images: result.rows,
+      images: imageList,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) }
     });
   } catch(e) {
@@ -139,35 +408,73 @@ router.get('/media', async (req, res) => {
   }
 });
 
+// Single media with translation and keywords
 router.get('/media/:id', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
+    const imageId = parseInt(req.params.id);
+    
+    trackVisit(req, `media/${imageId}`, imageId);
+    
     const result = await pool.query(`
       SELECT i.*, c.catname as category_name FROM image i
       LEFT JOIN category c ON i.belongs_to_gallery = c.id WHERE i.id = $1
-    `, [req.params.id]);
+    `, [imageId]);
+    
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
     
-    await pool.query('UPDATE image SET view_count = view_count + 1 WHERE id = $1', [req.params.id]);
+    await pool.query('UPDATE image SET view_count = view_count + 1 WHERE id = $1', [imageId]);
     
     const related = await pool.query(
-      'SELECT id, title, thumbnail_path, view_count FROM image WHERE belongs_to_gallery = $1 AND id != $2 ORDER BY view_count DESC LIMIT 8',
-      [result.rows[0].belongs_to_gallery, req.params.id]
+      'SELECT id, title, thumbnail_path, local_path, view_count FROM image WHERE belongs_to_gallery = $1 AND id != $2 ORDER BY view_count DESC LIMIT 8',
+      [result.rows[0].belongs_to_gallery, imageId]
     );
     
-    res.json({ ...result.rows[0], related: related.rows });
+    // Get learned keywords
+    const keywords = await getImageKeywords(imageId);
+    
+    let image = result.rows[0];
+    let relatedList = related.rows;
+    
+    // Translate if not English
+    if (lang !== 'en') {
+      image.title = await translateText(image.title, lang);
+      image.description = await translateText(image.description, lang);
+      image.category_name = await translateText(image.category_name, lang);
+      
+      const translatedRelated = await translateBatch(relatedList.map(r => r.title || ''), lang);
+      relatedList = relatedList.map((r, i) => ({ ...r, title: translatedRelated[i] || r.title }));
+    }
+    
+    res.json({ 
+      ...image, 
+      related: relatedList,
+      keywords,
+      ui: uiTranslations[lang] || uiTranslations.en
+    });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Comments
+// Comments with translation
 router.get('/media/:id/comments', async (req, res) => {
   try {
+    const lang = req.query.lang || 'en';
     const result = await pool.query(
       'SELECT id, username, comment_text, created_at FROM comments WHERE photo_id = $1 ORDER BY created_at DESC LIMIT 100',
       [req.params.id]
     );
-    res.json({ comments: result.rows });
+    
+    let comments = result.rows;
+    
+    // Translate comments if not English
+    if (lang !== 'en' && comments.length > 0) {
+      const translatedComments = await translateBatch(comments.map(c => c.comment_text || ''), lang);
+      comments = comments.map((c, i) => ({ ...c, comment_text: translatedComments[i] || c.comment_text }));
+    }
+    
+    res.json({ comments });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -188,18 +495,120 @@ router.post('/media/:id/comments', async (req, res) => {
   }
 });
 
-// Search
+// Search with translation and keyword learning
 router.get('/search', async (req, res) => {
   try {
     const q = req.query.q || '';
+    const lang = req.query.lang || 'en';
     const limit = parseInt(req.query.limit) || 12;
+    
+    trackVisit(req, `search/${q}`);
+    
+    // Search in original content + learned keywords
     const result = await pool.query(`
-      SELECT i.id, i.title, i.local_path, i.thumbnail_path, i.view_count, i.average_rating, c.catname as category_name
-      FROM image i LEFT JOIN category c ON i.belongs_to_gallery = c.id
-      WHERE i.title ILIKE $1 OR i.description ILIKE $1 OR c.catname ILIKE $1
-      ORDER BY i.view_count DESC LIMIT $2
-    `, ['%' + q + '%', limit]);
-    res.json({ query: q, results: result.rows });
+      SELECT DISTINCT i.id, i.title, i.local_path, i.thumbnail_path, i.view_count, i.average_rating, c.catname as category_name
+      FROM image i 
+      LEFT JOIN category c ON i.belongs_to_gallery = c.id
+      LEFT JOIN image_keywords ik ON i.id = ik.image_id
+      WHERE i.title ILIKE $1 OR i.description ILIKE $1 OR c.catname ILIKE $1 OR ik.keyword ILIKE $2
+      ORDER BY i.view_count DESC LIMIT $3
+    `, ['%' + q + '%', q.toLowerCase(), limit]);
+    
+    logSearch(req, q, result.rows.length);
+    
+    // Learn from internal searches for matching content
+    if (result.rows.length > 0) {
+      result.rows.slice(0, 5).forEach(img => {
+        learnKeywords(img.id, q, 'internal_search');
+      });
+    }
+    
+    let imageList = result.rows;
+    
+    // Translate if not English
+    if (lang !== 'en') {
+      const translatedTitles = await translateBatch(imageList.map(i => i.title || ''), lang);
+      imageList = imageList.map((img, i) => ({ ...img, title: translatedTitles[i] || img.title }));
+    }
+    
+    res.json({ query: q, results: imageList });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Analytics endpoint
+router.get('/analytics', async (req, res) => {
+  try {
+    const today = await pool.query(`
+      SELECT COUNT(DISTINCT ip) as visitors, COUNT(*) as pageviews 
+      FROM analytics WHERE created_at > NOW() - INTERVAL '24 hours'
+    `);
+    const countries = await pool.query(`
+      SELECT country, COUNT(DISTINCT ip) as visitors 
+      FROM analytics WHERE created_at > NOW() - INTERVAL '24 hours'
+      GROUP BY country ORDER BY visitors DESC LIMIT 20
+    `);
+    const live = await pool.query(`
+      SELECT COUNT(DISTINCT ip) as live 
+      FROM analytics WHERE created_at > NOW() - INTERVAL '5 minutes'
+    `);
+    const referers = await pool.query(`
+      SELECT referer, COUNT(*) as count 
+      FROM analytics WHERE referer != '' AND created_at > NOW() - INTERVAL '24 hours'
+      GROUP BY referer ORDER BY count DESC LIMIT 10
+    `);
+    res.json({
+      live: parseInt(live.rows[0]?.live || 0),
+      today: { visitors: parseInt(today.rows[0]?.visitors || 0), pageviews: parseInt(today.rows[0]?.pageviews || 0) },
+      countries: countries.rows,
+      topReferers: referers.rows
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Search stats endpoint
+router.get('/search-stats', async (req, res) => {
+  try {
+    const popular = await pool.query(`SELECT LOWER(query) as search_term, COUNT(*) as count FROM search_logs GROUP BY LOWER(query) ORDER BY count DESC LIMIT 50`);
+    const popularToday = await pool.query(`SELECT LOWER(query) as search_term, COUNT(*) as count FROM search_logs WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY LOWER(query) ORDER BY count DESC LIMIT 20`);
+    const totals = await pool.query(`SELECT COUNT(*) as total_searches, COUNT(DISTINCT ip) as unique_searchers, COUNT(DISTINCT LOWER(query)) as unique_terms FROM search_logs`);
+    const today = await pool.query(`SELECT COUNT(*) as searches, COUNT(DISTINCT ip) as unique_searchers FROM search_logs WHERE created_at > NOW() - INTERVAL '24 hours'`);
+    const recent = await pool.query(`SELECT query, country, results_count, created_at FROM search_logs ORDER BY created_at DESC LIMIT 50`);
+    const zeroResults = await pool.query(`SELECT LOWER(query) as search_term, COUNT(*) as count FROM search_logs WHERE results_count = 0 AND created_at > NOW() - INTERVAL '7 days' GROUP BY LOWER(query) ORDER BY count DESC LIMIT 20`);
+
+    res.json({
+      totals: { allTime: parseInt(totals.rows[0]?.total_searches || 0), uniqueSearchers: parseInt(totals.rows[0]?.unique_searchers || 0), uniqueTerms: parseInt(totals.rows[0]?.unique_terms || 0) },
+      today: { searches: parseInt(today.rows[0]?.searches || 0), uniqueSearchers: parseInt(today.rows[0]?.unique_searchers || 0) },
+      popularAllTime: popular.rows, popularToday: popularToday.rows, recent: recent.rows, zeroResults: zeroResults.rows
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Insights endpoint
+router.get('/insights', async (req, res) => {
+  try {
+    const googleSearches = await pool.query(`SELECT search_query, COUNT(*) as count FROM search_engine_referrals WHERE engine = 'google' AND created_at > NOW() - INTERVAL '30 days' GROUP BY search_query ORDER BY count DESC LIMIT 50`);
+    const contentGaps = await pool.query(`SELECT term, source, search_count, has_content FROM content_demand WHERE has_content = FALSE ORDER BY search_count DESC LIMIT 30`);
+    const popularContent = await pool.query(`SELECT term, source, search_count FROM content_demand WHERE has_content = TRUE ORDER BY search_count DESC LIMIT 30`);
+    const competitors = await pool.query(`SELECT referrer_domain, COUNT(*) as visits, COUNT(DISTINCT ip) as unique_visitors FROM external_referrers WHERE referrer_domain = ANY($1) AND created_at > NOW() - INTERVAL '30 days' GROUP BY referrer_domain ORDER BY visits DESC`, [competitorDomains]);
+    const allReferrers = await pool.query(`SELECT referrer_domain, COUNT(*) as visits FROM external_referrers WHERE created_at > NOW() - INTERVAL '30 days' GROUP BY referrer_domain ORDER BY visits DESC LIMIT 50`);
+    const learnedKeywords = await pool.query(`SELECT keyword, COUNT(*) as count, SUM(weight) as total_weight FROM image_keywords GROUP BY keyword ORDER BY total_weight DESC LIMIT 50`);
+
+    res.json({
+      searchEngineTraffic: { google: googleSearches.rows },
+      contentInsights: { gaps: contentGaps.rows, popular: popularContent.rows },
+      referrers: { competitors: competitors.rows, allSites: allReferrers.rows },
+      learnedKeywords: learnedKeywords.rows,
+      recommendations: {
+        contentToCreate: contentGaps.rows.slice(0, 10).map(r => r.term),
+        trendsToCapitalize: popularContent.rows.slice(0, 10).map(r => r.term)
+      }
+    });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }

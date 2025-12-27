@@ -38,6 +38,14 @@ const ageGateText = {
   hu: { title: 'Életkor ellenőrzés', warning: 'Felnőtt tartalom', question: '18+?', yes: 'Igen', no: 'Nem', disclaimer: 'Belépéssel megerősíted 18+.' }
 };
 
+const countryFlags = {
+  US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', FR: '🇫🇷', ES: '🇪🇸', IT: '🇮🇹', NL: '🇳🇱', BE: '🇧🇪', 
+  RU: '🇷🇺', UA: '🇺🇦', PL: '🇵🇱', CZ: '🇨🇿', AT: '🇦🇹', CH: '🇨🇭', SE: '🇸🇪', NO: '🇳🇴',
+  CN: '🇨🇳', JP: '🇯🇵', KR: '🇰🇷', TH: '🇹🇭', VN: '🇻🇳', ID: '🇮🇩', MY: '🇲🇾', SG: '🇸🇬', PH: '🇵🇭',
+  BR: '🇧🇷', MX: '🇲🇽', AR: '🇦🇷', CO: '🇨🇴', AU: '🇦🇺', NZ: '🇳🇿', CA: '🇨🇦', IN: '🇮🇳',
+  SA: '🇸🇦', AE: '🇦🇪', EG: '🇪🇬', TR: '🇹🇷', GR: '🇬🇷', PT: '🇵🇹', HU: '🇭🇺', RO: '🇷🇴', XX: '🌍'
+};
+
 function AgeGate({ lang, onAccept, onDecline, onLangChange }) {
   const text = ageGateText[lang] || ageGateText.en;
   const isRtl = lang === 'ar';
@@ -63,7 +71,58 @@ function AgeGate({ lang, onAccept, onDecline, onLangChange }) {
   );
 }
 
-// Video thumbnail component with rotating preview
+function StatsModal({ onClose, analytics }) {
+  if (!analytics) return null;
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9998 }} onClick={onClose}>
+      <div style={{ background: '#1a1a1a', padding: '30px', borderRadius: '12px', maxWidth: '600px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #333' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, color: '#f60' }}>📊 Live Statistics</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: '24px', cursor: 'pointer' }}>×</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '25px' }}>
+          <div style={{ background: '#222', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', color: '#4f4', fontWeight: 'bold' }}>{analytics.live}</div>
+            <div style={{ color: '#888', fontSize: '12px' }}>🟢 Online Now</div>
+          </div>
+          <div style={{ background: '#222', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', color: '#f60', fontWeight: 'bold' }}>{analytics.today?.visitors || 0}</div>
+            <div style={{ color: '#888', fontSize: '12px' }}>👥 Today</div>
+          </div>
+          <div style={{ background: '#222', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', color: '#6cf', fontWeight: 'bold' }}>{analytics.today?.pageviews || 0}</div>
+            <div style={{ color: '#888', fontSize: '12px' }}>📄 Views</div>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div>
+            <h3 style={{ color: '#fff', marginBottom: '10px', fontSize: '14px' }}>🌍 Countries</h3>
+            <div style={{ background: '#222', borderRadius: '8px', padding: '10px' }}>
+              {analytics.countries?.slice(0, 10).map((c, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 9 ? '1px solid #333' : 'none' }}>
+                  <span>{countryFlags[c.country] || '🌍'} {c.country}</span>
+                  <span style={{ color: '#f60' }}>{c.visitors}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 style={{ color: '#fff', marginBottom: '10px', fontSize: '14px' }}>🔗 Referrers</h3>
+            <div style={{ background: '#222', borderRadius: '8px', padding: '10px' }}>
+              {analytics.topReferers?.slice(0, 10).map((r, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 9 ? '1px solid #333' : 'none', fontSize: '12px' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>{r.referer ? new URL(r.referer).hostname : 'Direct'}</span>
+                  <span style={{ color: '#f60' }}>{r.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function VideoThumbnail({ img, ui, onClick }) {
   const [thumbs, setThumbs] = useState([]);
   const [currentThumb, setCurrentThumb] = useState(0);
@@ -71,76 +130,40 @@ function VideoThumbnail({ img, ui, onClick }) {
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    // Fetch video thumbnails
-    fetch(`${API}/video-thumbs/${img.id}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.thumbs && data.thumbs.length > 0) {
-          setThumbs(data.thumbs);
-        }
-      })
-      .catch(() => {});
+    fetch(`${API}/video-thumbs/${img.id}`).then(r => r.json()).then(data => {
+      if (data.thumbs?.length > 0) setThumbs(data.thumbs);
+    }).catch(() => {});
   }, [img.id]);
 
   useEffect(() => {
     if (isHovering && thumbs.length > 1) {
-      intervalRef.current = setInterval(() => {
-        setCurrentThumb(prev => (prev + 1) % thumbs.length);
-      }, 2000);
+      intervalRef.current = setInterval(() => setCurrentThumb(prev => (prev + 1) % thumbs.length), 2000);
     } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
       setCurrentThumb(0);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isHovering, thumbs.length]);
 
-  const hasRotatingThumbs = thumbs.length > 0;
-  const displayThumb = hasRotatingThumbs ? thumbs[currentThumb] : null;
-
   return (
-    <article 
-      style={{ background: '#222', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', position: 'relative' }} 
-      onClick={onClick}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-    >
+    <article style={{ background: '#222', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', position: 'relative' }} onClick={onClick} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
       <div style={{ width: '100%', height: '150px', background: '#333', position: 'relative', overflow: 'hidden' }}>
-        {hasRotatingThumbs ? (
-          <img 
-            src={displayThumb} 
-            alt={img.title || ui.untitled} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s' }} 
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
+        {thumbs.length > 0 ? (
+          <img src={thumbs[currentThumb]} alt={img.title || ui.untitled} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '48px' }}>▶</span>
-          </div>
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: '48px' }}>▶</span></div>
         )}
-        {/* Progress dots */}
         {isHovering && thumbs.length > 1 && (
           <div style={{ position: 'absolute', bottom: '8px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '4px' }}>
-            {thumbs.map((_, i) => (
-              <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: i === currentThumb ? '#f60' : 'rgba(255,255,255,0.5)' }} />
-            ))}
+            {thumbs.map((_, i) => <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: i === currentThumb ? '#f60' : 'rgba(255,255,255,0.5)' }} />)}
           </div>
         )}
-        {/* Play icon overlay */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: isHovering ? 1 : 0.7, transition: 'opacity 0.3s' }}>
-          <div style={{ width: '40px', height: '40px', background: 'rgba(0,0,0,0.7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '20px', marginLeft: '3px' }}>▶</span>
-          </div>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: isHovering ? 1 : 0.7 }}>
+          <div style={{ width: '40px', height: '40px', background: 'rgba(0,0,0,0.7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: '20px', marginLeft: '3px' }}>▶</span></div>
         </div>
       </div>
       <span style={{ position: 'absolute', top: '5px', right: '5px', background: '#f60', color: '#fff', padding: '2px 6px', borderRadius: '3px', fontSize: '10px' }}>{ui.video}</span>
-      <div style={{ padding: '10px' }}>
-        <h3 style={{ margin: 0, fontSize: '12px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 'normal' }}>{img.title || ui.untitled}</h3>
-        <p style={{ margin: '5px 0 0', fontSize: '11px', color: '#666' }}>{img.view_count} {ui.views} | {parseFloat(img.average_rating || 0).toFixed(1)} {ui.rating}</p>
-      </div>
+      <div style={{ padding: '10px' }}><h3 style={{ margin: 0, fontSize: '12px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 'normal' }}>{img.title || ui.untitled}</h3><p style={{ margin: '5px 0 0', fontSize: '11px', color: '#666' }}>{img.view_count} {ui.views} | {parseFloat(img.average_rating || 0).toFixed(1)} {ui.rating}</p></div>
     </article>
   );
 }
@@ -206,6 +229,8 @@ function App() {
   const [categories, setCategories] = useState([]);
   const [images, setImages] = useState([]);
   const [stats, setStats] = useState({});
+  const [analytics, setAnalytics] = useState(null);
+  const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedCat, setSelectedCat] = useState(null);
   const [selectedCatData, setSelectedCatData] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -231,35 +256,81 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!ageVerified) return;
+    const fetchAnalytics = () => {
+      fetch(`${API}/analytics`).then(r => r.json()).then(setAnalytics).catch(() => {});
+    };
+    fetchAnalytics();
+    const interval = setInterval(fetchAnalytics, 30000);
+    return () => clearInterval(interval);
+  }, [ageVerified]);
+
   const handleAgeAccept = () => { localStorage.setItem('ageVerified', 'true'); setAgeVerified(true); };
   const handleAgeDecline = () => { window.location.href = 'https://www.google.com'; };
   const changeLang = (code) => { setLang(code); setLangState(code); document.title = translations[code].meta.title; };
 
+  // Fetch stats and categories with language
   useEffect(() => {
     if (!ageVerified) return;
     fetch(`${API}/stats`).then(r => r.json()).then(setStats);
-    fetch(`${API}/categories`).then(r => r.json()).then(d => setCategories(d.categories || []));
+    fetch(`${API}/categories?lang=${lang}`).then(r => r.json()).then(d => setCategories(d.categories || []));
     document.title = meta.title;
-  }, [ageVerified]);
+  }, [ageVerified, lang]);
 
+  // Fetch images with language
   useEffect(() => {
     if (!ageVerified || selectedImage || searchResults || showCompliance) return;
     setLoading(true);
     if (selectedCat) {
-      fetch(`${API}/categories/${selectedCat}`).then(r => r.json()).then(d => { setSelectedCatData(d.category); setImages(d.images || []); setLoading(false); });
+      fetch(`${API}/categories/${selectedCat}?lang=${lang}`).then(r => r.json()).then(d => { 
+        setSelectedCatData(d.category); 
+        setImages(d.images || []); 
+        setLoading(false); 
+      });
     } else {
-      fetch(`${API}/media?page=${page}&limit=12`).then(r => r.json()).then(d => { setImages(d.images || []); setTotalPages(d.pagination?.pages || 1); setLoading(false); });
+      fetch(`${API}/media?page=${page}&limit=12&lang=${lang}`).then(r => r.json()).then(d => { 
+        setImages(d.images || []); 
+        setTotalPages(d.pagination?.pages || 1); 
+        setLoading(false); 
+      });
     }
-  }, [selectedCat, page, selectedImage, searchResults, showCompliance, ageVerified]);
+  }, [selectedCat, page, selectedImage, searchResults, showCompliance, ageVerified, lang]);
 
   if (!ageVerified) return <AgeGate lang={lang} onAccept={handleAgeAccept} onDecline={handleAgeDecline} onLangChange={(code) => { setLang(code); setLangState(code); }} />;
 
   const selectCategory = (id) => { setSelectedCat(id); setSelectedCatData(null); setSelectedImage(null); setSearchResults(null); setShowCompliance(false); setPage(1); };
-  const openImage = (img) => { fetch(`${API}/media/${img.id}`).then(r => r.json()).then(data => { setSelectedImage(data); setRelated(data.related || []); }); fetch(`${API}/media/${img.id}/comments`).then(r => r.json()).then(d => setComments(d.comments || [])); };
+  
+  const openImage = (img) => { 
+    fetch(`${API}/media/${img.id}?lang=${lang}`).then(r => r.json()).then(data => { 
+      setSelectedImage(data); 
+      setRelated(data.related || []); 
+    }); 
+    fetch(`${API}/media/${img.id}/comments?lang=${lang}`).then(r => r.json()).then(d => setComments(d.comments || [])); 
+  };
+  
   const closeImage = () => { setSelectedImage(null); setComments([]); setRelated([]); };
   const saveUsername = (name) => { setUsername(name); localStorage.setItem('username', name); };
-  const postComment = async () => { if (!username.trim() || !newComment.trim()) return; const res = await fetch(`${API}/media/${selectedImage.id}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, comment_text: newComment }) }); if (res.ok) { const data = await res.json(); setComments([data.comment, ...comments]); setNewComment(''); } };
-  const doSearch = async (e) => { e.preventDefault(); if (!searchQuery.trim()) return; const res = await fetch(`${API}/search?q=${encodeURIComponent(searchQuery)}&limit=12`); const data = await res.json(); setSearchResults(data); setSelectedImage(null); setSelectedCat(null); };
+  const postComment = async () => { 
+    if (!username.trim() || !newComment.trim()) return; 
+    const res = await fetch(`${API}/media/${selectedImage.id}/comments`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ username, comment_text: newComment }) 
+    }); 
+    if (res.ok) { const data = await res.json(); setComments([data.comment, ...comments]); setNewComment(''); } 
+  };
+  
+  const doSearch = async (e) => { 
+    e.preventDefault(); 
+    if (!searchQuery.trim()) return; 
+    const res = await fetch(`${API}/search?q=${encodeURIComponent(searchQuery)}&limit=24&lang=${lang}`); 
+    const data = await res.json(); 
+    setSearchResults(data); 
+    setSelectedImage(null); 
+    setSelectedCat(null); 
+  };
+  
   const clearSearch = () => { setSearchResults(null); setSearchQuery(''); };
   const formatDate = (d) => new Date(d).toLocaleDateString(lang, { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -282,6 +353,14 @@ function App() {
               <h1 style={{ marginTop: '15px', fontSize: '24px' }}>{selectedImage.title || ui.untitled}</h1>
               <p style={{ color: '#888' }}>{selectedImage.description}</p>
               <div style={{ color: '#666', fontSize: '14px' }}>{ui.views}: {selectedImage.view_count} | {ui.rating}: {parseFloat(selectedImage.average_rating || 0).toFixed(1)}</div>
+              {selectedImage.keywords?.length > 0 && (
+                <div style={{ marginTop: '15px' }}>
+                  <span style={{ color: '#888', fontSize: '12px' }}>Tags: </span>
+                  {selectedImage.keywords.slice(0, 10).map((kw, i) => (
+                    <span key={i} onClick={() => { setSearchQuery(kw); doSearch({ preventDefault: () => {} }); }} style={{ display: 'inline-block', background: '#333', color: '#ccc', padding: '3px 8px', margin: '2px', borderRadius: '3px', fontSize: '11px', cursor: 'pointer' }}>{kw}</span>
+                  ))}
+                </div>
+              )}
               {related.length > 0 && <div style={{ marginTop: '30px' }}><h3 style={{ color: '#f60' }}>{ui.relatedIn} {selectedImage.category_name}</h3><div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>{related.map(r => <div key={r.id} onClick={() => openImage(r)} style={{ cursor: 'pointer' }}><img src={`/media/${r.thumbnail_path}`} alt={r.title} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px' }} onError={(e) => { e.target.style.display = 'none'; }} /></div>)}</div></div>}
             </div>
             <aside style={{ flex: 1, minWidth: '280px', background: '#1a1a1a', padding: '20px', borderRadius: '8px', alignSelf: 'flex-start' }}>
@@ -305,9 +384,18 @@ function App() {
 
   return (
     <div style={{ fontFamily: 'Arial', background: '#111', color: '#fff', minHeight: '100vh', direction: dir }}>
+      {showStatsModal && <StatsModal analytics={analytics} onClose={() => setShowStatsModal(false)} />}
       <header style={{ background: '#222', padding: '20px', borderBottom: '2px solid #f60' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-          <div><h1 style={{ margin: 0, color: '#f60', cursor: 'pointer' }} onClick={() => { selectCategory(null); clearSearch(); }}>BoyVue Gallery</h1><p style={{ margin: '5px 0 0', color: '#888' }}>{stats.images?.toLocaleString() || 0} {ui.images} | {stats.comments?.toLocaleString() || 0} {ui.comments} | {stats.users?.toLocaleString() || 0} {ui.users}</p></div>
+          <div>
+            <h1 style={{ margin: 0, color: '#f60', cursor: 'pointer' }} onClick={() => { selectCategory(null); clearSearch(); }}>BoyVue Gallery</h1>
+            <p style={{ margin: '5px 0 0', color: '#888', cursor: 'pointer' }} onClick={() => setShowStatsModal(true)}>
+              <span style={{ color: '#4f4' }}>🟢 {analytics?.live || 0} {ui.online || 'online'}</span>
+              {' | '}{stats.images?.toLocaleString() || 0} {ui.images}
+              {' | '}{stats.comments?.toLocaleString() || 0} {ui.comments}
+              {analytics?.countries?.slice(0, 3).map(c => ` ${countryFlags[c.country] || '🌍'}`).join('')}
+            </p>
+          </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <form onSubmit={doSearch} style={{ display: 'flex', gap: '10px' }}><input type="text" placeholder={ui.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ padding: '10px 15px', background: '#333', border: '1px solid #444', borderRadius: '4px', color: '#fff', width: '180px' }} /><button type="submit" style={{ padding: '10px 20px', background: '#f60', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{ui.search}</button></form>
             <LanguageSelector lang={lang} onChange={changeLang} />
@@ -328,9 +416,7 @@ function App() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '15px' }}>
                 {displayImages.map(img => {
                   const isVid = isVideo(img.local_path);
-                  if (isVid) {
-                    return <VideoThumbnail key={img.id} img={img} ui={ui} onClick={() => openImage(img)} />;
-                  }
+                  if (isVid) return <VideoThumbnail key={img.id} img={img} ui={ui} onClick={() => openImage(img)} />;
                   return (
                     <article key={img.id} style={{ background: '#222', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', position: 'relative' }} onClick={() => openImage(img)}>
                       <img src={`/media/${img.thumbnail_path}`} alt={img.title || ui.untitled} loading="lazy" style={{ width: '100%', height: '150px', objectFit: 'cover' }} onError={(e) => { e.target.src = `/media/${img.local_path}`; }} />

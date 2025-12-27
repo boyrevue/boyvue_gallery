@@ -1,0 +1,18 @@
+# Robots.txt for BoyVue.com
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /media/video-thumbs/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /media/video-thumbs/
+
+# Block all other bots
+User-agent: *
+Disallow: /
+
+# Sitemaps
+Sitemap: https://boyvue.com/sitemap.xml
+Sitemap: https://boyvue.com/video-sitemap.xml
