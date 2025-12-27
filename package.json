@@ -15,6 +15,7 @@
     "dev:frontend": "vite"
   },
   "dependencies": {
+    "@google-cloud/translate": "^9.3.0",
     "bcrypt": "^5.1.1",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
@@ -27,6 +28,7 @@
     "mysql2": "^3.16.0",
     "pg": "^8.11.3",
     "sharp": "^0.33.2",
+    "translate-google-api": "^1.0.4",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
