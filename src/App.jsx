@@ -58,12 +58,21 @@ function CompliancePage({ ui, onBack }) {
       </header>
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
         <h1 style={{ color: '#f60' }}>{ui.legalCompliance}</h1>
-        <section style={{ marginBottom: '40px' }}><h2 style={{ color: '#fff' }}>{ui.statementTitle}</h2><p>{ui.statementText}</p></section>
-        <section style={{ marginBottom: '40px' }}><h2 style={{ color: '#fff' }}>{ui.ageVerification}</h2><p>{ui.ageVerificationText}</p></section>
-        <section style={{ marginBottom: '40px' }}><h2 style={{ color: '#fff' }}>{ui.contentRemoval}</h2><p>Email: <a href="mailto:dmca@boyvue.com" style={{ color: '#f60' }}>dmca@boyvue.com</a></p></section>
+        <section style={{ marginBottom: '40px' }}>
+          <h2 style={{ color: '#fff' }}>{ui.statementTitle}</h2>
+          <p>{ui.statementText}</p>
+        </section>
+        <section style={{ marginBottom: '40px' }}>
+          <h2 style={{ color: '#fff' }}>{ui.ageVerification}</h2>
+          <p>{ui.ageVerificationText}</p>
+        </section>
+        <section style={{ marginBottom: '40px' }}>
+          <h2 style={{ color: '#fff' }}>{ui.contentRemoval}</h2>
+          <p>Email: <a href="mailto:dmca@boyvue.com" style={{ color: '#f60' }}>dmca@boyvue.com</a></p>
+        </section>
         <button onClick={onBack} style={{ padding: '10px 30px', background: '#f60', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{ui.backToGallery}</button>
       </div>
-    </footer>
+    </div>
   );
 }
 
@@ -89,14 +98,12 @@ function App() {
   const ui = translations[lang].ui;
   const meta = translations[lang].meta;
 
-  const changeLang = (code) => { 
-    setLang(code); 
-    setLangState(code); 
+  const changeLang = (code) => {
+    setLang(code);
+    setLangState(code);
     document.title = translations[code].meta.title;
-    // Update meta tags
     document.querySelector('meta[name="description"]')?.setAttribute('content', translations[code].meta.description);
     document.querySelector('meta[name="keywords"]')?.setAttribute('content', translations[code].meta.keywords);
-    // Reload data with new language
     loadCategories(code);
     if (!selectedImage && !searchResults) {
       loadMedia(code, selectedCat, page);
@@ -110,16 +117,16 @@ function App() {
   const loadMedia = (language, category, pageNum) => {
     setLoading(true);
     if (category) {
-      fetch(`${API}/categories/${category}?lang=${language}`).then(r => r.json()).then(d => { 
-        setSelectedCatData(d.category); 
-        setImages(d.images || []); 
-        setLoading(false); 
+      fetch(`${API}/categories/${category}?lang=${language}`).then(r => r.json()).then(d => {
+        setSelectedCatData(d.category);
+        setImages(d.images || []);
+        setLoading(false);
       });
     } else {
-      fetch(`${API}/media?page=${pageNum}&limit=12&lang=${language}`).then(r => r.json()).then(d => { 
-        setImages(d.images || []); 
-        setTotalPages(d.pagination?.pages || 1); 
-        setLoading(false); 
+      fetch(`${API}/media?page=${pageNum}&limit=12&lang=${language}`).then(r => r.json()).then(d => {
+        setImages(d.images || []);
+        setTotalPages(d.pagination?.pages || 1);
+        setLoading(false);
       });
     }
   };
@@ -135,56 +142,68 @@ function App() {
     loadMedia(lang, selectedCat, page);
   }, [selectedCat, page, selectedImage, searchResults, showCompliance]);
 
-  const selectCategory = (id) => { 
-    setSelectedCat(id); 
-    setSelectedCatData(null); 
-    setSelectedImage(null); 
-    setSearchResults(null); 
-    setShowCompliance(false); 
-    setPage(1); 
+  const selectCategory = (id) => {
+    setSelectedCat(id);
+    setSelectedCatData(null);
+    setSelectedImage(null);
+    setSearchResults(null);
+    setShowCompliance(false);
+    setPage(1);
   };
-  
+
   const openImage = (img) => {
-    fetch(`${API}/media/${img.id}?lang=${lang}`).then(r => r.json()).then(data => { 
-      setSelectedImage(data); 
-      setRelated(data.related || []); 
+    fetch(`${API}/media/${img.id}?lang=${lang}`).then(r => r.json()).then(data => {
+      setSelectedImage(data);
+      setRelated(data.related || []);
     });
     fetch(`${API}/media/${img.id}/comments?lang=${lang}`).then(r => r.json()).then(d => setComments(d.comments || []));
   };
-  
-  const closeImage = () => { setSelectedImage(null); setComments([]); setRelated([]); };
-  const saveUsername = (name) => { setUsername(name); localStorage.setItem('username', name); };
-  
+
+  const closeImage = () => {
+    setSelectedImage(null);
+    setComments([]);
+    setRelated([]);
+  };
+
+  const saveUsername = (name) => {
+    setUsername(name);
+    localStorage.setItem('username', name);
+  };
+
   const postComment = async () => {
     if (!username.trim() || !newComment.trim()) return;
-    const res = await fetch(`${API}/media/${selectedImage.id}/comments`, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ username, comment_text: newComment }) 
+    const res = await fetch(`${API}/media/${selectedImage.id}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, comment_text: newComment })
     });
-    if (res.ok) { 
-      const data = await res.json(); 
-      setComments([data.comment, ...comments]); 
-      setNewComment(''); 
+    if (res.ok) {
+      const data = await res.json();
+      setComments([data.comment, ...comments]);
+      setNewComment('');
     }
   };
-  
-  const doSearch = async (e) => { 
-    e.preventDefault(); 
-    if (!searchQuery.trim()) return; 
-    const res = await fetch(`${API}/search?q=${encodeURIComponent(searchQuery)}&limit=12&lang=${lang}`); 
-    const data = await res.json(); 
-    setSearchResults(data); 
-    setSelectedImage(null); 
-    setSelectedCat(null); 
+
+  const doSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    const res = await fetch(`${API}/search?q=${encodeURIComponent(searchQuery)}&limit=12&lang=${lang}`);
+    const data = await res.json();
+    setSearchResults(data);
+    setSelectedImage(null);
+    setSelectedCat(null);
   };
-  
-  const clearSearch = () => { setSearchResults(null); setSearchQuery(''); };
+
+  const clearSearch = () => {
+    setSearchResults(null);
+    setSearchQuery('');
+  };
+
   const formatDate = (d) => new Date(d).toLocaleDateString(lang, { year: 'numeric', month: 'short', day: 'numeric' });
 
   if (showCompliance) return <CompliancePage ui={ui} onBack={() => setShowCompliance(false)} />;
 
-  // Image Detail
+  // Image Detail View
   if (selectedImage) {
     const isVid = isVideo(selectedImage.local_path);
     return (
@@ -204,11 +223,28 @@ function App() {
           </nav>
           <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
             <div style={{ flex: 2, minWidth: '300px' }}>
-              {isVid ? <video controls style={{ width: '100%', borderRadius: '8px' }}><source src={`/media/${selectedImage.local_path}`} type="video/mp4" /></video> : <img src={`/media/${selectedImage.local_path}`} alt={selectedImage.title} style={{ width: '100%', borderRadius: '8px' }} />}
+              {isVid ? (
+                <video controls style={{ width: '100%', borderRadius: '8px' }}>
+                  <source src={`/media/${selectedImage.local_path}`} type="video/mp4" />
+                </video>
+              ) : (
+                <img src={`/media/${selectedImage.local_path}`} alt={selectedImage.title} style={{ width: '100%', borderRadius: '8px' }} />
+              )}
               <h1 style={{ marginTop: '15px', fontSize: '24px' }}>{selectedImage.title || ui.untitled}</h1>
               <p style={{ color: '#888' }}>{selectedImage.description}</p>
               <div style={{ color: '#666', fontSize: '14px' }}>{ui.views}: {selectedImage.view_count} | {ui.rating}: {parseFloat(selectedImage.average_rating || 0).toFixed(1)}</div>
-              {related.length > 0 && <div style={{ marginTop: '30px' }}><h3 style={{ color: '#f60' }}>{ui.relatedIn} {selectedImage.category_name}</h3><div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>{related.map(r => <div key={r.id} onClick={() => openImage(r)} style={{ cursor: 'pointer' }}><img src={`/media/${r.thumbnail_path}`} alt={r.title} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px' }} onError={(e) => { e.target.style.display = 'none'; }} /></div>)}</div></div>}
+              {related.length > 0 && (
+                <div style={{ marginTop: '30px' }}>
+                  <h3 style={{ color: '#f60' }}>{ui.relatedIn} {selectedImage.category_name}</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                    {related.map(r => (
+                      <div key={r.id} onClick={() => openImage(r)} style={{ cursor: 'pointer' }}>
+                        <img src={`/media/${r.thumbnail_path}`} alt={r.title} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <aside style={{ flex: 1, minWidth: '280px', background: '#1a1a1a', padding: '20px', borderRadius: '8px', alignSelf: 'flex-start' }}>
               <h3 style={{ color: '#f60', marginTop: 0 }}>{ui.comments} ({comments.length})</h3>
@@ -217,7 +253,21 @@ function App() {
                 <textarea placeholder={ui.writeComment} value={newComment} onChange={(e) => setNewComment(e.target.value)} style={{ width: '100%', padding: '10px', height: '80px', background: '#333', border: '1px solid #444', borderRadius: '4px', color: '#fff', resize: 'none', boxSizing: 'border-box' }} />
                 <button onClick={postComment} disabled={!username.trim() || !newComment.trim()} style={{ marginTop: '10px', padding: '10px 20px', background: '#f60', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%' }}>{ui.postComment}</button>
               </div>
-              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>{comments.length === 0 ? <p style={{ color: '#666' }}>{ui.noComments}</p> : comments.map(c => <div key={c.id} style={{ padding: '12px', background: '#222', borderRadius: '6px', marginBottom: '10px' }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}><strong style={{ color: '#f60' }}>{c.username}</strong><span style={{ color: '#666', fontSize: '12px' }}>{formatDate(c.created_at)}</span></div><p style={{ margin: 0, color: '#ccc' }}>{c.comment_text}</p></div>)}</div>
+              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                {comments.length === 0 ? (
+                  <p style={{ color: '#666' }}>{ui.noComments}</p>
+                ) : (
+                  comments.map(c => (
+                    <div key={c.id} style={{ padding: '12px', background: '#222', borderRadius: '6px', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <strong style={{ color: '#f60' }}>{c.username}</strong>
+                        <span style={{ color: '#666', fontSize: '12px' }}>{formatDate(c.created_at)}</span>
+                      </div>
+                      <p style={{ margin: 0, color: '#ccc' }}>{c.comment_text}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </aside>
           </div>
         </article>
@@ -226,7 +276,7 @@ function App() {
     );
   }
 
-  // Gallery
+  // Gallery View
   const displayImages = searchResults ? searchResults.results : images;
   const currentTitle = searchResults ? `${ui.search}: ${searchQuery}` : (selectedCatData ? selectedCatData.catname : ui.allImages);
 
@@ -251,26 +301,50 @@ function App() {
         <aside style={{ width: '250px', background: '#1a1a1a', padding: '20px', minHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
           <h2 style={{ color: '#f60', marginTop: 0, fontSize: '18px' }}>{ui.categories}</h2>
           <div onClick={() => { selectCategory(null); clearSearch(); }} style={{ padding: '8px', cursor: 'pointer', background: !selectedCat && !searchResults ? '#333' : 'transparent', marginBottom: '5px', borderRadius: '4px' }}>{ui.allImages}</div>
-          {categories.map(cat => <div key={cat.id} onClick={() => selectCategory(cat.id)} style={{ padding: '8px', cursor: 'pointer', background: selectedCat === cat.id ? '#333' : 'transparent', marginBottom: '5px', borderRadius: '4px', fontSize: '14px' }}>{cat.catname} <span style={{ color: '#666' }}>({cat.photo_count})</span></div>)}
+          {categories.map(cat => (
+            <div key={cat.id} onClick={() => selectCategory(cat.id)} style={{ padding: '8px', cursor: 'pointer', background: selectedCat === cat.id ? '#333' : 'transparent', marginBottom: '5px', borderRadius: '4px', fontSize: '14px' }}>
+              {cat.catname} <span style={{ color: '#666' }}>({cat.photo_count})</span>
+            </div>
+          ))}
         </aside>
         <main style={{ flex: 1, padding: '20px' }}>
-          <h2 style={{ marginTop: 0, marginBottom: '20px' }}>{currentTitle}{searchResults && <button onClick={clearSearch} style={{ marginLeft: '15px', padding: '5px 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{ui.clearSearch}</button>}</h2>
+          <h2 style={{ marginTop: 0, marginBottom: '20px' }}>
+            {currentTitle}
+            {searchResults && <button onClick={clearSearch} style={{ marginLeft: '15px', padding: '5px 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{ui.clearSearch}</button>}
+          </h2>
           {selectedCatData?.description && <p style={{ color: '#888', marginBottom: '20px' }}>{selectedCatData.description}</p>}
-          {loading ? <p>{ui.loading}</p> : (
+          {loading ? (
+            <p>{ui.loading}</p>
+          ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '15px' }}>
                 {displayImages.map(img => {
                   const isVid = isVideo(img.local_path);
                   return (
                     <article key={img.id} style={{ background: '#222', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', position: 'relative' }} onClick={() => openImage(img)}>
-                      {isVid ? <div style={{ width: '100%', height: '150px', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: '48px' }}>▶</span></div> : <img src={`/media/${img.thumbnail_path}`} alt={img.title || ui.untitled} loading="lazy" style={{ width: '100%', height: '150px', objectFit: 'cover' }} onError={(e) => { e.target.src = `/media/${img.local_path}`; }} />}
+                      {isVid ? (
+                        <div style={{ width: '100%', height: '150px', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '48px' }}>▶</span>
+                        </div>
+                      ) : (
+                        <img src={`/media/${img.thumbnail_path}`} alt={img.title || ui.untitled} loading="lazy" style={{ width: '100%', height: '150px', objectFit: 'cover' }} onError={(e) => { e.target.src = `/media/${img.local_path}`; }} />
+                      )}
                       {isVid && <span style={{ position: 'absolute', top: '5px', right: '5px', background: '#f60', color: '#fff', padding: '2px 6px', borderRadius: '3px', fontSize: '10px' }}>{ui.video}</span>}
-                      <div style={{ padding: '10px' }}><h3 style={{ margin: 0, fontSize: '12px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 'normal' }}>{img.title || ui.untitled}</h3><p style={{ margin: '5px 0 0', fontSize: '11px', color: '#666' }}>{img.view_count} {ui.views} | {parseFloat(img.average_rating || 0).toFixed(1)} {ui.rating}</p></div>
+                      <div style={{ padding: '10px' }}>
+                        <h3 style={{ margin: 0, fontSize: '12px', color: '#ccc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 'normal' }}>{img.title || ui.untitled}</h3>
+                        <p style={{ margin: '5px 0 0', fontSize: '11px', color: '#666' }}>{img.view_count} {ui.views} | {parseFloat(img.average_rating || 0).toFixed(1)} {ui.rating}</p>
+                      </div>
                     </article>
                   );
                 })}
               </div>
-              {!searchResults && <nav style={{ marginTop: '30px', textAlign: 'center' }}><button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '10px 20px', margin: '0 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{ui.prev}</button><span style={{ color: '#888' }}>{ui.page} {page} {ui.of} {totalPages.toLocaleString()}</span><button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '10px 20px', margin: '0 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{ui.next}</button></nav>}
+              {!searchResults && (
+                <nav style={{ marginTop: '30px', textAlign: 'center' }}>
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '10px 20px', margin: '0 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{ui.prev}</button>
+                  <span style={{ color: '#888' }}>{ui.page} {page} {ui.of} {totalPages.toLocaleString()}</span>
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '10px 20px', margin: '0 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{ui.next}</button>
+                </nav>
+              )}
             </>
           )}
         </main>
