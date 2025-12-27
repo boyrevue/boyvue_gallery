@@ -63,7 +63,7 @@ router.get('/categories/:id', async (req, res) => {
 router.get('/media', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 24;
+    const limit = parseInt(req.query.limit) || 12;
     const offset = (page - 1) * limit;
     const cat = req.query.category;
 
@@ -146,7 +146,7 @@ router.post('/media/:id/comments', async (req, res) => {
 router.get('/search', async (req, res) => {
   try {
     const q = req.query.q || '';
-    const limit = parseInt(req.query.limit) || 24;
+    const limit = parseInt(req.query.limit) || 12;
     
     const result = await pool.query(
       "SELECT id, title, local_path, thumbnail_path, view_count FROM image WHERE title ILIKE $1 OR description ILIKE $1 LIMIT $2",

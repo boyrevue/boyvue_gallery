@@ -152,7 +152,7 @@ function App() {
     if (selectedCat) {
       fetch(`${API}/categories/${selectedCat}`).then(r => r.json()).then(d => { setSelectedCatData(d.category); setImages(d.images || []); if (d.seo) updateSEO(d.seo); setLoading(false); });
     } else {
-      fetch(`${API}/media?page=${page}&limit=24`).then(r => r.json()).then(d => { setImages(d.images || []); setTotalPages(d.pagination?.pages || 1); setLoading(false); });
+      fetch(`${API}/media?page=${page}&limit=12`).then(r => r.json()).then(d => { setImages(d.images || []); setTotalPages(d.pagination?.pages || 1); setLoading(false); });
     }
   }, [selectedCat, page, selectedImage, searchResults, showCompliance]);
 
@@ -168,7 +168,7 @@ function App() {
     const res = await fetch(`${API}/media/${selectedImage.id}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, comment_text: newComment }) });
     if (res.ok) { const data = await res.json(); setComments([data.comment, ...comments]); setNewComment(''); }
   };
-  const doSearch = async (e) => { e.preventDefault(); if (!searchQuery.trim()) return; const res = await fetch(`${API}/search?q=${encodeURIComponent(searchQuery)}&limit=48`); const data = await res.json(); setSearchResults(data); setSelectedImage(null); setSelectedCat(null); setShowCompliance(false); if (data.seo) updateSEO(data.seo); };
+  const doSearch = async (e) => { e.preventDefault(); if (!searchQuery.trim()) return; const res = await fetch(`${API}/search?q=${encodeURIComponent(searchQuery)}&limit=12`); const data = await res.json(); setSearchResults(data); setSelectedImage(null); setSelectedCat(null); setShowCompliance(false); if (data.seo) updateSEO(data.seo); };
   const clearSearch = () => { setSearchResults(null); setSearchQuery(''); };
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
