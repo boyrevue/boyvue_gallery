@@ -189,50 +189,6 @@ function LanguageSelector({ lang, onChange }) {
   );
 }
 
-
-function ShareButtons({ url, title, image }) {
-  const fullUrl = url || (typeof window !== "undefined" ? window.location.href : "");
-  const encodedUrl = encodeURIComponent(fullUrl);
-  const encodedTitle = encodeURIComponent(title || "");
-  const encodedImage = encodeURIComponent(image || "");
-  
-  const shares = {
-    twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-    reddit: `https://reddit.com/submit?url=${encodedUrl}&title=${encodedTitle}`,
-    telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
-    whatsapp: `https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}`,
-    pinterest: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&media=${encodedImage}&description=${encodedTitle}`,
-    tumblr: `https://www.tumblr.com/share/link?url=${encodedUrl}&name=${encodedTitle}`,
-    vk: `https://vk.com/share.php?url=${encodedUrl}&title=${encodedTitle}`,
-    email: `mailto:?subject=${encodedTitle}&body=${encodedUrl}`
-  };
-  
-  const btnStyle = (bg) => ({
-    display: "inline-flex", alignItems: "center", justifyContent: "center",
-    width: "36px", height: "36px", borderRadius: "50%",
-    background: bg, color: "#fff", textDecoration: "none", fontSize: "16px"
-  });
-  
-  const copyLink = () => { navigator.clipboard.writeText(fullUrl); alert("Link copied!"); };
-  
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "15px", alignItems: "center" }}>
-      <span style={{ color: "#888", fontSize: "13px", marginRight: "5px" }}>Share:</span>
-      <a href={shares.twitter} target="_blank" rel="noopener noreferrer" style={btnStyle("#1DA1F2")} title="Twitter">𝕏</a>
-      <a href={shares.facebook} target="_blank" rel="noopener noreferrer" style={btnStyle("#4267B2")} title="Facebook">f</a>
-      <a href={shares.reddit} target="_blank" rel="noopener noreferrer" style={btnStyle("#FF4500")} title="Reddit">⬆</a>
-      <a href={shares.telegram} target="_blank" rel="noopener noreferrer" style={btnStyle("#0088cc")} title="Telegram">✈</a>
-      <a href={shares.whatsapp} target="_blank" rel="noopener noreferrer" style={btnStyle("#25D366")} title="WhatsApp">💬</a>
-      <a href={shares.pinterest} target="_blank" rel="noopener noreferrer" style={btnStyle("#E60023")} title="Pinterest">P</a>
-      <a href={shares.tumblr} target="_blank" rel="noopener noreferrer" style={btnStyle("#35465C")} title="Tumblr">t</a>
-      <a href={shares.vk} target="_blank" rel="noopener noreferrer" style={btnStyle("#4C75A3")} title="VK">V</a>
-      <a href={shares.email} style={btnStyle("#666")} title="Email">✉</a>
-      <button onClick={copyLink} style={{ ...btnStyle("#333"), border: "none", cursor: "pointer" }} title="Copy Link">🔗</button>
-    </div>
-  );
-}
-
 function Footer({ ui, onCompliance }) {
   return (
     <footer style={{ background: '#1a1a1a', padding: '30px 20px', textAlign: 'center', color: '#666', fontSize: '14px', borderTop: '1px solid #333' }}>
@@ -397,7 +353,6 @@ function App() {
               <h1 style={{ marginTop: '15px', fontSize: '24px' }}>{selectedImage.title || ui.untitled}</h1>
               <p style={{ color: '#888' }}>{selectedImage.description}</p>
               <div style={{ color: '#666', fontSize: '14px' }}>{ui.views}: {selectedImage.view_count} | {ui.rating}: {parseFloat(selectedImage.average_rating || 0).toFixed(1)}</div>
-              <ShareButtons url={`https://boyvue.com/v/${selectedImage.id}`} title={selectedImage.title} image={`https://boyvue.com/media/${selectedImage.thumbnail_path}`} />
               {selectedImage.keywords?.length > 0 && (
                 <div style={{ marginTop: '15px' }}>
                   <span style={{ color: '#888', fontSize: '12px' }}>Tags: </span>
