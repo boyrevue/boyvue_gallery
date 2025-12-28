@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { URL } from 'url';
 import https from 'https';
+import { getTranslations, getTranslationsByCategory, getLanguages, getUITranslations, t } from '../services/translation-service.js';
 
 const { Pool } = pg;
 const router = express.Router();
@@ -235,24 +236,20 @@ async function logSearch(req, query, resultsCount) {
   } catch(e) {}
 }
 
-// UI translations
-const uiTranslations = {
-  en: { views: 'views', rating: 'rating', video: 'VIDEO', comments: 'comments', relatedIn: 'Related in', home: 'Home', untitled: 'Untitled', allImages: 'All Images', categories: 'Categories', search: 'Search', loading: 'Loading...', noComments: 'No comments yet', writeComment: 'Write a comment...', yourName: 'Your name', postComment: 'Post Comment', prev: 'Previous', next: 'Next', page: 'Page', of: 'of' },
-  es: { views: 'vistas', rating: 'nota', video: 'VIDEO', comments: 'comentarios', relatedIn: 'Relacionado en', home: 'Inicio', untitled: 'Sin título', allImages: 'Todas', categories: 'Categorías', search: 'Buscar', loading: 'Cargando...', noComments: 'Sin comentarios', writeComment: 'Escribe un comentario...', yourName: 'Tu nombre', postComment: 'Comentar', prev: 'Anterior', next: 'Siguiente', page: 'Página', of: 'de' },
-  de: { views: 'Aufrufe', rating: 'Bewertung', video: 'VIDEO', comments: 'Kommentare', relatedIn: 'Ähnlich in', home: 'Startseite', untitled: 'Ohne Titel', allImages: 'Alle Bilder', categories: 'Kategorien', search: 'Suchen', loading: 'Laden...', noComments: 'Keine Kommentare', writeComment: 'Kommentar schreiben...', yourName: 'Dein Name', postComment: 'Kommentieren', prev: 'Zurück', next: 'Weiter', page: 'Seite', of: 'von' },
-  fr: { views: 'vues', rating: 'note', video: 'VIDÉO', comments: 'commentaires', relatedIn: 'Similaire dans', home: 'Accueil', untitled: 'Sans titre', allImages: 'Toutes', categories: 'Catégories', search: 'Rechercher', loading: 'Chargement...', noComments: 'Aucun commentaire', writeComment: 'Écrire un commentaire...', yourName: 'Votre nom', postComment: 'Commenter', prev: 'Précédent', next: 'Suivant', page: 'Page', of: 'sur' },
-  pt: { views: 'visualizações', rating: 'nota', video: 'VÍDEO', comments: 'comentários', relatedIn: 'Relacionado em', home: 'Início', untitled: 'Sem título', allImages: 'Todas', categories: 'Categorias', search: 'Buscar', loading: 'Carregando...', noComments: 'Sem comentários', writeComment: 'Escreva um comentário...', yourName: 'Seu nome', postComment: 'Comentar', prev: 'Anterior', next: 'Próximo', page: 'Página', of: 'de' },
-  ru: { views: 'просмотров', rating: 'рейтинг', video: 'ВИДЕО', comments: 'комментарии', relatedIn: 'Похожее в', home: 'Главная', untitled: 'Без названия', allImages: 'Все', categories: 'Категории', search: 'Поиск', loading: 'Загрузка...', noComments: 'Нет комментариев', writeComment: 'Написать комментарий...', yourName: 'Ваше имя', postComment: 'Отправить', prev: 'Назад', next: 'Далее', page: 'Страница', of: 'из' },
-  zh: { views: '次观看', rating: '评分', video: '视频', comments: '评论', relatedIn: '相关内容', home: '首页', untitled: '无标题', allImages: '全部', categories: '分类', search: '搜索', loading: '加载中...', noComments: '暂无评论', writeComment: '写评论...', yourName: '你的名字', postComment: '发表评论', prev: '上一页', next: '下一页', page: '第', of: '页，共' },
-  ja: { views: '回視聴', rating: '評価', video: '動画', comments: 'コメント', relatedIn: '関連', home: 'ホーム', untitled: '無題', allImages: 'すべて', categories: 'カテゴリ', search: '検索', loading: '読み込み中...', noComments: 'コメントなし', writeComment: 'コメントを書く...', yourName: '名前', postComment: '投稿', prev: '前へ', next: '次へ', page: 'ページ', of: '/' },
-  ko: { views: '조회', rating: '평점', video: '동영상', comments: '댓글', relatedIn: '관련 콘텐츠', home: '홈', untitled: '제목 없음', allImages: '전체', categories: '카테고리', search: '검색', loading: '로딩...', noComments: '댓글 없음', writeComment: '댓글 작성...', yourName: '이름', postComment: '게시', prev: '이전', next: '다음', page: '페이지', of: '/' },
-  th: { views: 'การดู', rating: 'คะแนน', video: 'วิดีโอ', comments: 'ความคิดเห็น', relatedIn: 'ที่เกี่ยวข้อง', home: 'หน้าแรก', untitled: 'ไม่มีชื่อ', allImages: 'ทั้งหมด', categories: 'หมวดหมู่', search: 'ค้นหา', loading: 'กำลังโหลด...', noComments: 'ไม่มีความคิดเห็น', writeComment: 'เขียนความคิดเห็น...', yourName: 'ชื่อของคุณ', postComment: 'โพสต์', prev: 'ก่อนหน้า', next: 'ถัดไป', page: 'หน้า', of: 'จาก' },
-  it: { views: 'visualizzazioni', rating: 'voto', video: 'VIDEO', comments: 'commenti', relatedIn: 'Correlati in', home: 'Home', untitled: 'Senza titolo', allImages: 'Tutte', categories: 'Categorie', search: 'Cerca', loading: 'Caricamento...', noComments: 'Nessun commento', writeComment: 'Scrivi un commento...', yourName: 'Il tuo nome', postComment: 'Pubblica', prev: 'Precedente', next: 'Successivo', page: 'Pagina', of: 'di' },
-  nl: { views: 'weergaven', rating: 'beoordeling', video: 'VIDEO', comments: 'reacties', relatedIn: 'Gerelateerd in', home: 'Home', untitled: 'Naamloos', allImages: 'Alle', categories: 'Categorieën', search: 'Zoeken', loading: 'Laden...', noComments: 'Geen reacties', writeComment: 'Schrijf een reactie...', yourName: 'Je naam', postComment: 'Plaatsen', prev: 'Vorige', next: 'Volgende', page: 'Pagina', of: 'van' },
-  pl: { views: 'wyświetleń', rating: 'ocena', video: 'WIDEO', comments: 'komentarze', relatedIn: 'Powiązane w', home: 'Strona główna', untitled: 'Bez tytułu', allImages: 'Wszystkie', categories: 'Kategorie', search: 'Szukaj', loading: 'Ładowanie...', noComments: 'Brak komentarzy', writeComment: 'Napisz komentarz...', yourName: 'Twoje imię', postComment: 'Opublikuj', prev: 'Poprzednia', next: 'Następna', page: 'Strona', of: 'z' },
-  tr: { views: 'görüntüleme', rating: 'puan', video: 'VİDEO', comments: 'yorumlar', relatedIn: 'İlgili', home: 'Ana sayfa', untitled: 'Başlıksız', allImages: 'Tümü', categories: 'Kategoriler', search: 'Ara', loading: 'Yükleniyor...', noComments: 'Yorum yok', writeComment: 'Yorum yaz...', yourName: 'Adınız', postComment: 'Gönder', prev: 'Önceki', next: 'Sonraki', page: 'Sayfa', of: '/' },
-  ar: { views: 'مشاهدات', rating: 'تقييم', video: 'فيديو', comments: 'تعليقات', relatedIn: 'ذات صلة', home: 'الرئيسية', untitled: 'بدون عنوان', allImages: 'الكل', categories: 'الأقسام', search: 'بحث', loading: 'جاري التحميل...', noComments: 'لا توجد تعليقات', writeComment: 'اكتب تعليقاً...', yourName: 'اسمك', postComment: 'نشر', prev: 'السابق', next: 'التالي', page: 'صفحة', of: 'من' }
-};
+// UI translations cache - fetched from DB
+const uiTranslationsCache = new Map();
+const UI_CACHE_TTL = 5 * 60 * 1000;
+
+async function getUITranslationsForLang(lang) {
+  const cacheKey = `ui:${lang}`;
+  const cached = uiTranslationsCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < UI_CACHE_TTL) {
+    return cached.data;
+  }
+  const ui = await getTranslationsByCategory(lang, 'ui');
+  uiTranslationsCache.set(cacheKey, { data: ui, timestamp: Date.now() });
+  return ui;
+}
 
 // Detect language endpoint
 router.get('/detect-language', async (req, res) => {
@@ -262,10 +259,39 @@ router.get('/detect-language', async (req, res) => {
   res.json({ lang, country, ip });
 });
 
-// Get UI translations
-router.get('/ui-translations/:lang', (req, res) => {
+// Get UI translations from DB
+router.get('/ui-translations/:lang', async (req, res) => {
   const lang = req.params.lang;
-  res.json(uiTranslations[lang] || uiTranslations.en);
+  try {
+    const ui = await getUITranslationsForLang(lang);
+    res.json(ui);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get all translations for frontend
+router.get('/translations/:lang', async (req, res) => {
+  const lang = req.params.lang;
+  try {
+    const data = await getUITranslations(lang);
+    if (!data) {
+      return res.status(404).json({ error: 'Language not found' });
+    }
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get all supported languages
+router.get('/languages', async (req, res) => {
+  try {
+    const langs = await getLanguages();
+    res.json(langs);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Video thumbnails
@@ -446,11 +472,12 @@ router.get('/media/:id', async (req, res) => {
       relatedList = relatedList.map((r, i) => ({ ...r, title: translatedRelated[i] || r.title }));
     }
     
-    res.json({ 
-      ...image, 
+    const ui = await getUITranslationsForLang(lang);
+    res.json({
+      ...image,
       related: relatedList,
       keywords,
-      ui: uiTranslations[lang] || uiTranslations.en
+      ui
     });
   } catch(e) {
     res.status(500).json({ error: e.message });
@@ -609,6 +636,67 @@ router.get('/insights', async (req, res) => {
         trendsToCapitalize: popularContent.rows.slice(0, 10).map(r => r.term)
       }
     });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// SEO Analysis endpoint (admin only - trigger manually)
+router.post('/seo/analyze', async (req, res) => {
+  try {
+    const { generateSEOReport, applyAutoSEOUpdates } = await import('../services/seo-analyzer.js');
+    const report = await generateSEOReport();
+
+    // Auto-apply suggestions
+    if (report.seoSuggestions && report.seoSuggestions.length > 0) {
+      await applyAutoSEOUpdates(report.seoSuggestions);
+    }
+
+    res.json({
+      success: true,
+      summary: report.summary,
+      trendingKeywords: report.summary.trendingSearches,
+      topKeywords: report.summary.topKeywords,
+      contentGaps: report.searchEngineTraffic.contentGaps.slice(0, 10),
+      seoIssues: report.summary.seoIssuesCount
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get SEO suggestions for a category
+router.get('/seo/category/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await pool.query(
+      'SELECT * FROM category_seo WHERE category_id = $1 ORDER BY language',
+      [id]
+    );
+    res.json({ seo: result.rows });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Update category SEO
+router.post('/seo/category/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { language, title, description, keywords, h1 } = req.body;
+
+    await pool.query(`
+      INSERT INTO category_seo (category_id, language, seo_title, seo_description, seo_keywords, h1_tag, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (category_id, language) DO UPDATE SET
+        seo_title = EXCLUDED.seo_title,
+        seo_description = EXCLUDED.seo_description,
+        seo_keywords = EXCLUDED.seo_keywords,
+        h1_tag = EXCLUDED.h1_tag,
+        updated_at = NOW()
+    `, [id, language || 'en', title, description, keywords || '', h1 || '']);
+
+    res.json({ success: true });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }

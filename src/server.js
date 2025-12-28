@@ -4,6 +4,7 @@ import { dirname, join } from 'path';
 import pg from 'pg';
 import https from 'https';
 import routes from './api/routes.js';
+import { getTranslationsByCategory, t, getLanguages } from './services/translation-service.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -19,6 +20,8 @@ const pool = new Pool({
 
 app.set('trust proxy', 1);
 const translateCache = new Map();
+const seoCache = new Map();
+const SEO_CACHE_TTL = 5 * 60 * 1000; // 5 min
 
 function translate(text, targetLang) {
   if (!text || targetLang === 'en') return Promise.resolve(text);
@@ -42,27 +45,28 @@ function translate(text, targetLang) {
   });
 }
 
-const defaultSeo = {
-  en: { title: 'BoyVue Gallery - Free Gay Photo & Video Gallery', description: 'Browse 356,000+ free gay photos and 5,500+ videos.' },
-  de: { title: 'BoyVue Galerie - Kostenlose Gay Foto & Video Galerie', description: 'Durchsuche 356.000+ kostenlose Gay Fotos und 5.500+ Videos.' },
-  fr: { title: 'BoyVue Galerie - Galerie Gay Gratuite', description: 'Parcourez 356 000+ photos et vidéos gay gratuites.' },
-  es: { title: 'BoyVue Galería - Galería Gay Gratis', description: 'Explora 356.000+ fotos y videos gay gratis.' },
-  nl: { title: 'BoyVue Galerij - Gratis Gay Galerij', description: 'Bekijk 356.000+ gratis gay fotos en videos.' },
-  it: { title: 'BoyVue Galleria - Galleria Gay Gratuita', description: 'Sfoglia 356.000+ foto e video gay gratuiti.' },
-  pt: { title: 'BoyVue Galeria - Galeria Gay Grátis', description: 'Navegue por 356.000+ fotos e vídeos gay grátis.' },
-  ru: { title: 'BoyVue Галерея - Бесплатная Gay Галерея', description: 'Просмотрите 356 000+ фото и видео.' },
-  pl: { title: 'BoyVue Galeria - Darmowa Galeria Gay', description: 'Przeglądaj 356 000+ zdjęć i filmów gay.' },
-  ja: { title: 'BoyVueギャラリー - 無料ギャラリー', description: '356,000+枚の写真と動画を閲覧。' },
-  zh: { title: 'BoyVue图库 - 免费图库', description: '浏览356,000+张照片和视频。' },
-  th: { title: 'BoyVue แกลเลอรี', description: 'เรียกดู 356,000+ รูปและวิดีโอ' },
-  tr: { title: 'BoyVue Galeri', description: '356.000+ fotoğraf ve video.' },
-  ko: { title: 'BoyVue 갤러리', description: '356,000+ 사진과 비디오.' },
-  ar: { title: 'معرض BoyVue', description: 'تصفح 356,000+ صورة وفيديو.' }
-};
+// Get SEO translations from DB with cache
+async function getSeoTranslations(lang) {
+  const cacheKey = `seo:${lang}`;
+  const cached = seoCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < SEO_CACHE_TTL) {
+    return cached.data;
+  }
+  const seo = await getTranslationsByCategory(lang, 'seo');
+  const ui = await getTranslationsByCategory(lang, 'ui');
+  const data = {
+    title: seo.defaultTitle || 'BoyVue Gallery',
+    description: seo.defaultDescription || 'Browse free photos and videos.',
+    views: ui.views || 'views',
+    browse: ui.allImages || 'Browse'
+  };
+  seoCache.set(cacheKey, { data, timestamp: Date.now() });
+  return data;
+}
 
-const viewLabels = { en: 'views', de: 'Aufrufe', fr: 'vues', es: 'vistas', nl: 'weergaven', it: 'visualizzazioni', pt: 'visualizações', ru: 'просмотров', pl: 'wyświetleń', ja: '回視聴', zh: '次观看', th: 'การดู', tr: 'görüntüleme', ko: '조회', ar: 'مشاهدات' };
-const browseLabels = { en: 'Browse', de: 'Durchsuche', fr: 'Parcourez', es: 'Explora', nl: 'Bekijk', it: 'Sfoglia', pt: 'Navegue', ru: 'Просмотр', pl: 'Przeglądaj', ja: '閲覧', zh: '浏览', th: 'เรียกดู', tr: 'Göz at', ko: '찾아보기', ar: 'تصفح' };
-const supportedLangs = Object.keys(defaultSeo);
+// Supported languages from DB
+let supportedLangs = ['en', 'de', 'ru', 'es', 'zh', 'ja', 'th', 'ko', 'pt', 'fr', 'it', 'nl', 'pl', 'cs', 'ar', 'el', 'vi', 'id', 'tr', 'hu'];
+getLanguages().then(langs => { supportedLangs = Object.keys(langs); }).catch(() => {});
 
 function isBot(ua) { return /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|applebot|petalbot|pinterest|whatsapp|telegram|discord/i.test(ua || ''); }
 function getLang(req) { if (req.query.lang && supportedLangs.includes(req.query.lang)) return req.query.lang; const al = (req.headers['accept-language'] || '').split(',')[0]?.split('-')[0]?.toLowerCase(); return supportedLangs.includes(al) ? al : 'en'; }
@@ -125,12 +129,13 @@ app.use('/media', express.static('/var/www/html/bp/data'));
 app.get('/', async (req, res) => {
   const ua = req.headers['user-agent'] || '', lang = getLang(req);
   if (isBot(ua) || req.query.lang) {
-    const meta = { ...(defaultSeo[lang] || defaultSeo.en), image: 'https://boyvue.com/media/logo-social.jpg' };
-    const schema = {"@context":"https://schema.org","@type":"WebSite","name":"BoyVue Gallery","url":"https://boyvue.com","description":meta.description,"inLanguage":lang};
-    let body = `<h2>${browseLabels[lang]||'Browse'}</h2><div class="g">`;
+    const seo = await getSeoTranslations(lang);
+    const meta = { title: seo.title, description: seo.description, image: 'https://boyvue.com/media/logo-social.jpg' };
+    const schema = {"@context":"https://schema.org","@type":"WebSite","name":"BoyVue Gallery","url":"https://boyvue.com","description":meta.description,"inLanguage":lang,"potentialAction":{"@type":"SearchAction","target":"https://boyvue.com/search?q={search_term_string}","query-input":"required name=search_term_string"}};
+    let body = `<h2>${seo.browse}</h2><div class="g">`;
     try { const cats = await pool.query('SELECT id,catname,photo_count FROM category WHERE photo_count>0 ORDER BY photo_count DESC LIMIT 20'); for (const c of cats.rows) body += `<div class="i"><h3><a href="/c/${c.id}">${esc(c.catname)}</a></h3><p>${c.photo_count.toLocaleString()} items</p></div>`; } catch(e) {}
     body += `</div><div class="g">`;
-    try { const imgs = await pool.query('SELECT id,title,thumbnail_path,view_count FROM image ORDER BY view_count DESC LIMIT 24'); for (const i of imgs.rows) body += `<div class="i"><a href="/v/${i.id}"><img src="/media/${i.thumbnail_path}" alt="${esc(i.title||'')}" loading="lazy"></a><h3><a href="/v/${i.id}">${esc((i.title||'Video').substring(0,45))}</a></h3><p>${(i.view_count||0).toLocaleString()} ${viewLabels[lang]||'views'}</p></div>`; } catch(e) {}
+    try { const imgs = await pool.query('SELECT id,title,thumbnail_path,view_count FROM image ORDER BY view_count DESC LIMIT 24'); for (const i of imgs.rows) body += `<div class="i"><a href="/v/${i.id}"><img src="/media/${i.thumbnail_path}" alt="${esc(i.title||'')}" loading="lazy"></a><h3><a href="/v/${i.id}">${esc((i.title||'Video').substring(0,45))}</a></h3><p>${(i.view_count||0).toLocaleString()} ${seo.views}</p></div>`; } catch(e) {}
     body += `</div>`;
     return res.send(botHtml(meta, lang, '/', schema, body));
   }
@@ -145,16 +150,19 @@ app.get('/v/:id', async (req, res) => {
     const r = await pool.query('SELECT i.*,c.catname FROM image i LEFT JOIN category c ON i.belongs_to_gallery=c.id WHERE i.id=$1', [id]);
     if (!r.rows.length) return serveSpa(req, res);
     const img = r.rows[0];
+    const seo = await getSeoTranslations(lang);
+    const ui = await getTranslationsByCategory(lang, 'ui');
     let title = img.title || 'Video', desc = (img.description || title).substring(0, 100);
     if (lang !== 'en') { title = await translate(title, lang); desc = await translate(desc, lang); }
     const isVid = /\.(mp4|webm|avi|mov|flv|mkv)$/i.test(img.local_path);
-    const vl = viewLabels[lang] || 'views', vc = (img.view_count||0).toLocaleString();
+    const vl = seo.views, vc = (img.view_count||0).toLocaleString();
     const meta = { title: `${title.substring(0,50)} | BoyVue`, description: `${desc.substring(0,120)} - ${vc} ${vl}`, image: `https://boyvue.com/media/${img.thumbnail_path||img.local_path}`, type: isVid ? 'video.other' : 'article' };
-    const schema = isVid ? {"@context":"https://schema.org","@type":"VideoObject","name":title,"description":meta.description,"thumbnailUrl":meta.image,"contentUrl":`https://boyvue.com/media/${img.local_path}`,"interactionStatistic":{"@type":"InteractionCounter","interactionType":"WatchAction","userInteractionCount":img.view_count||0}} : {"@context":"https://schema.org","@type":"ImageObject","name":title,"contentUrl":meta.image};
+    const schema = isVid ? {"@context":"https://schema.org","@type":"VideoObject","name":title,"description":meta.description,"thumbnailUrl":meta.image,"contentUrl":`https://boyvue.com/media/${img.local_path}`,"uploadDate":img.created_at||new Date().toISOString(),"interactionStatistic":{"@type":"InteractionCounter","interactionType":"WatchAction","userInteractionCount":img.view_count||0}} : {"@context":"https://schema.org","@type":"ImageObject","name":title,"contentUrl":meta.image};
     let body = `<article><h2>${esc(title)}</h2>`;
     body += isVid ? `<video controls poster="${meta.image}" style="width:100%;max-width:800px"><source src="/media/${img.local_path}" type="video/mp4"></video>` : `<img src="/media/${img.local_path}" alt="${esc(title)}" style="width:100%;max-width:800px">`;
     body += `<p>${esc(img.description||'')}</p><p><strong>${vc} ${vl}</strong> | <a href="/c/${img.belongs_to_gallery}">${esc(img.catname||'Gallery')}</a></p></article>`;
-    try { const rel = await pool.query('SELECT id,title,thumbnail_path FROM image WHERE belongs_to_gallery=$1 AND id!=$2 ORDER BY view_count DESC LIMIT 8', [img.belongs_to_gallery, id]); if (rel.rows.length) { body += `<h3>Related</h3><div class="g">`; for (const x of rel.rows) body += `<div class="i"><a href="/v/${x.id}"><img src="/media/${x.thumbnail_path}" alt="${esc(x.title||'')}" loading="lazy"></a><h3><a href="/v/${x.id}">${esc((x.title||'Video').substring(0,40))}</a></h3></div>`; body += `</div>`; } } catch(e) {}
+    const relatedLabel = ui.relatedIn || 'Related';
+    try { const rel = await pool.query('SELECT id,title,thumbnail_path FROM image WHERE belongs_to_gallery=$1 AND id!=$2 ORDER BY view_count DESC LIMIT 8', [img.belongs_to_gallery, id]); if (rel.rows.length) { body += `<h3>${relatedLabel}</h3><div class="g">`; for (const x of rel.rows) body += `<div class="i"><a href="/v/${x.id}"><img src="/media/${x.thumbnail_path}" alt="${esc(x.title||'')}" loading="lazy"></a><h3><a href="/v/${x.id}">${esc((x.title||'Video').substring(0,40))}</a></h3></div>`; body += `</div>`; } } catch(e) {}
     res.send(botHtml(meta, lang, `/v/${id}`, schema, body));
   } catch(e) { console.error('SEO /v/:id:', e.message); serveSpa(req, res); }
 });
@@ -167,9 +175,10 @@ app.get('/c/:id', async (req, res) => {
     const r = await pool.query('SELECT * FROM category WHERE id=$1', [id]);
     if (!r.rows.length) return serveSpa(req, res);
     const cat = r.rows[0];
+    const seo = await getSeoTranslations(lang);
     let name = cat.catname;
     if (lang !== 'en') name = await translate(name, lang);
-    
+
     // Get i18n SEO from database
     let seoData = null;
     try {
@@ -180,21 +189,21 @@ app.get('/c/:id', async (req, res) => {
         if (seoEn.rows.length) seoData = seoEn.rows[0];
       }
     } catch(e) {}
-    
-    const bl = browseLabels[lang] || 'Browse', pc = (cat.photo_count||0).toLocaleString();
+
+    const pc = (cat.photo_count||0).toLocaleString();
     let coverImage = 'https://boyvue.com/media/logo-social.jpg';
     try { const first = await pool.query('SELECT thumbnail_path FROM image WHERE belongs_to_gallery=$1 ORDER BY view_count DESC LIMIT 1', [id]); if (first.rows.length) coverImage = `https://boyvue.com/media/${first.rows[0].thumbnail_path}`; } catch(e) {}
-    
+
     const meta = {
       title: seoData?.seo_title || `${name} | BoyVue Gallery`,
-      description: seoData?.seo_description || `${bl} ${pc} photos and videos in ${name}. Free HD streaming.`,
+      description: seoData?.seo_description || `${seo.browse} ${pc} photos and videos in ${name}. Free HD streaming.`,
       keywords: seoData?.seo_keywords || '',
       image: coverImage
     };
-    
-    const schema = {"@context":"https://schema.org","@type":"CollectionPage","name":meta.title,"description":meta.description,"numberOfItems":cat.photo_count||0,"inLanguage":lang};
+
+    const schema = {"@context":"https://schema.org","@type":"CollectionPage","name":meta.title,"description":meta.description,"numberOfItems":cat.photo_count||0,"inLanguage":lang,"mainEntity":{"@type":"ItemList","itemListElement":[]}};
     let body = `<h2>${esc(name)}</h2><p>${pc} items</p><div class="g">`;
-    try { const imgs = await pool.query('SELECT id,title,thumbnail_path,view_count FROM image WHERE belongs_to_gallery=$1 ORDER BY view_count DESC LIMIT 48', [id]); for (const i of imgs.rows) body += `<div class="i"><a href="/v/${i.id}"><img src="/media/${i.thumbnail_path}" alt="${esc(i.title||'')}" loading="lazy"></a><h3><a href="/v/${i.id}">${esc((i.title||'Video').substring(0,40))}</a></h3><p>${(i.view_count||0).toLocaleString()} ${viewLabels[lang]||'views'}</p></div>`; } catch(e) {}
+    try { const imgs = await pool.query('SELECT id,title,thumbnail_path,view_count FROM image WHERE belongs_to_gallery=$1 ORDER BY view_count DESC LIMIT 48', [id]); for (const i of imgs.rows) body += `<div class="i"><a href="/v/${i.id}"><img src="/media/${i.thumbnail_path}" alt="${esc(i.title||'')}" loading="lazy"></a><h3><a href="/v/${i.id}">${esc((i.title||'Video').substring(0,40))}</a></h3><p>${(i.view_count||0).toLocaleString()} ${seo.views}</p></div>`; } catch(e) {}
     body += `</div>`;
     res.send(botHtml(meta, lang, `/c/${id}`, schema, body));
   } catch(e) { console.error('SEO /c/:id:', e.message); serveSpa(req, res); }

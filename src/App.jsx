@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { translations, getLang, setLang } from './i18n.js';
+import { translations, getLang, setLang, fetchTranslations, fetchLanguages, getTranslationsSync } from './i18n.js';
 
 const API = '/api';
 const VIDEO_EXTS = ['.mp4', '.webm', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
@@ -15,27 +15,11 @@ function isVideo(path) {
   return VIDEO_EXTS.includes(path.substring(path.lastIndexOf('.')).toLowerCase());
 }
 
-const ageGateText = {
-  en: { title: 'Age Verification Required', warning: 'This website contains adult content', question: 'Are you 18 years or older?', yes: 'Yes, I am 18+', no: 'No, Exit', disclaimer: 'By entering, you confirm you are at least 18 years old.' },
-  de: { title: 'Altersverifikation', warning: 'Erwachseneninhalte', question: 'Sind Sie 18+?', yes: 'Ja', no: 'Nein', disclaimer: 'Mit Eintritt bestätigen Sie 18+ zu sein.' },
-  ru: { title: 'Проверка возраста', warning: 'Контент для взрослых', question: 'Вам 18+?', yes: 'Да', no: 'Нет', disclaimer: 'Входя, вы подтверждаете что вам 18+.' },
-  es: { title: 'Verificación de edad', warning: 'Contenido adulto', question: '¿Tienes 18+?', yes: 'Sí', no: 'No', disclaimer: 'Al entrar confirmas tener 18+.' },
-  zh: { title: '年龄验证', warning: '成人内容', question: '您满18岁了吗？', yes: '是', no: '否', disclaimer: '进入即确认已满18岁。' },
-  ja: { title: '年齢確認', warning: '成人向け', question: '18歳以上ですか？', yes: 'はい', no: 'いいえ', disclaimer: '入場で18歳以上を確認。' },
-  th: { title: 'ยืนยันอายุ', warning: 'เนื้อหาผู้ใหญ่', question: 'คุณอายุ 18+?', yes: 'ใช่', no: 'ไม่', disclaimer: 'การเข้าชมยืนยัน 18+' },
-  ko: { title: '나이 확인', warning: '성인 콘텐츠', question: '18세 이상?', yes: '예', no: '아니오', disclaimer: '입장 시 18세 이상 확인.' },
-  pt: { title: 'Verificação de idade', warning: 'Conteúdo adulto', question: 'Tem 18+?', yes: 'Sim', no: 'Não', disclaimer: 'Ao entrar confirma ter 18+.' },
-  fr: { title: 'Vérification d\'âge', warning: 'Contenu adulte', question: '18+?', yes: 'Oui', no: 'Non', disclaimer: 'En entrant vous confirmez avoir 18+.' },
-  it: { title: 'Verifica età', warning: 'Contenuto adulti', question: 'Hai 18+?', yes: 'Sì', no: 'No', disclaimer: 'Entrando confermi 18+.' },
-  nl: { title: 'Leeftijdscheck', warning: 'Volwassen inhoud', question: '18+?', yes: 'Ja', no: 'Nee', disclaimer: 'Door te betreden bevestig je 18+.' },
-  pl: { title: 'Weryfikacja wieku', warning: 'Treści dla dorosłych', question: '18+?', yes: 'Tak', no: 'Nie', disclaimer: 'Wchodząc potwierdzasz 18+.' },
-  cs: { title: 'Ověření věku', warning: 'Obsah pro dospělé', question: '18+?', yes: 'Ano', no: 'Ne', disclaimer: 'Vstupem potvrzuješ 18+.' },
-  ar: { title: 'التحقق من العمر', warning: 'محتوى للبالغين', question: '18+؟', yes: 'نعم', no: 'لا', disclaimer: 'بالدخول تؤكد 18+.' },
-  el: { title: 'Επαλήθευση ηλικίας', warning: 'Περιεχόμενο ενηλίκων', question: '18+;', yes: 'Ναι', no: 'Όχι', disclaimer: 'Εισερχόμενοι επιβεβαιώνετε 18+.' },
-  vi: { title: 'Xác minh tuổi', warning: 'Nội dung người lớn', question: '18+?', yes: 'Có', no: 'Không', disclaimer: 'Khi vào bạn xác nhận 18+.' },
-  id: { title: 'Verifikasi usia', warning: 'Konten dewasa', question: '18+?', yes: 'Ya', no: 'Tidak', disclaimer: 'Dengan masuk konfirmasi 18+.' },
-  tr: { title: 'Yaş doğrulama', warning: 'Yetişkin içerik', question: '18+?', yes: 'Evet', no: 'Hayır', disclaimer: 'Girerek 18+ onaylarsınız.' },
-  hu: { title: 'Életkor ellenőrzés', warning: 'Felnőtt tartalom', question: '18+?', yes: 'Igen', no: 'Nem', disclaimer: 'Belépéssel megerősíted 18+.' }
+// Fallback age gate text - will be overridden by DB
+const defaultAgeGateText = {
+  title: 'Age Verification Required', warning: 'This website contains adult content',
+  question: 'Are you 18 years or older?', yes: 'Yes, I am 18+', no: 'No, Exit',
+  disclaimer: 'By entering, you confirm you are at least 18 years old.'
 };
 
 const countryFlags = {
@@ -46,9 +30,10 @@ const countryFlags = {
   SA: '🇸🇦', AE: '🇦🇪', EG: '🇪🇬', TR: '🇹🇷', GR: '🇬🇷', PT: '🇵🇹', HU: '🇭🇺', RO: '🇷🇴', XX: '🌍'
 };
 
-function AgeGate({ lang, onAccept, onDecline, onLangChange }) {
-  const text = ageGateText[lang] || ageGateText.en;
+function AgeGate({ lang, ageGateText, languages, onAccept, onDecline, onLangChange }) {
+  const text = ageGateText || defaultAgeGateText;
   const isRtl = lang === 'ar';
+  const langList = languages || translations;
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, direction: isRtl ? 'rtl' : 'ltr' }}>
       <div style={{ background: 'linear-gradient(145deg, #1a1a1a, #222)', padding: '40px', borderRadius: '16px', maxWidth: '500px', textAlign: 'center', border: '2px solid #f60', boxShadow: '0 0 50px rgba(255,102,0,0.3)' }}>
@@ -62,8 +47,8 @@ function AgeGate({ lang, onAccept, onDecline, onLangChange }) {
         </div>
         <p style={{ color: '#888', fontSize: '12px', margin: '0 0 20px' }}>{text.disclaimer}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', paddingTop: '15px', borderTop: '1px solid #333' }}>
-          {Object.keys(translations).map(code => (
-            <button key={code} onClick={() => onLangChange(code)} style={{ background: lang === code ? '#f60' : '#333', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }} title={translations[code].name}>{translations[code].flag}</button>
+          {Object.keys(langList).map(code => (
+            <button key={code} onClick={() => onLangChange(code)} style={{ background: lang === code ? '#f60' : '#333', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }} title={langList[code].name}>{langList[code].flag}</button>
           ))}
         </div>
       </div>
@@ -288,9 +273,19 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
   const [showCompliance, setShowCompliance] = useState(false);
+  const [translationData, setTranslationData] = useState(null);
+  const [languages, setLanguages] = useState(null);
 
-  const ui = translations[lang]?.ui || translations.en.ui;
-  const meta = translations[lang]?.meta || translations.en.meta;
+  // Fetch translations from DB on mount and when language changes
+  useEffect(() => {
+    fetchTranslations(lang).then(data => setTranslationData(data)).catch(() => {});
+    fetchLanguages().then(data => setLanguages(data)).catch(() => {});
+  }, [lang]);
+
+  const currentTranslation = translationData || getTranslationsSync(lang);
+  const ui = currentTranslation?.ui || translations[lang]?.ui || translations.en.ui;
+  const meta = currentTranslation?.meta || translations[lang]?.meta || translations.en.meta;
+  const ageGateText = currentTranslation?.ageGate || null;
 
   useEffect(() => {
     if (!localStorage.getItem('lang')) {
@@ -341,7 +336,7 @@ function App() {
     }
   }, [selectedCat, page, selectedImage, searchResults, showCompliance, ageVerified, lang]);
 
-  if (!ageVerified) return <AgeGate lang={lang} onAccept={handleAgeAccept} onDecline={handleAgeDecline} onLangChange={(code) => { setLang(code); setLangState(code); }} />;
+  if (!ageVerified) return <AgeGate lang={lang} ageGateText={ageGateText} languages={languages || translations} onAccept={handleAgeAccept} onDecline={handleAgeDecline} onLangChange={(code) => { setLang(code); setLangState(code); }} />;
 
   const selectCategory = (id) => { setSelectedCat(id); setSelectedCatData(null); setSelectedImage(null); setSearchResults(null); setShowCompliance(false); setPage(1); };
   

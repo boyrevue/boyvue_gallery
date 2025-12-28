@@ -197,6 +197,106 @@ gal:newProperty
 npm run migrate
 ```
 
+## AI-Powered SEO System
+
+The platform includes a comprehensive AI-driven SEO optimization system following white-hat Google SEO practices.
+
+### SEO Components
+
+| Component | File | Description |
+|-----------|------|-------------|
+| SEO Analyzer | `src/services/seo-analyzer.js` | AI-driven analysis of search logs, trends, and content gaps |
+| SEO Service | `src/services/seo-service.js` | Meta tags, structured data, hreflang generation |
+| Translation Service | `src/services/translation-service.js` | Multilingual SEO with 20 languages |
+| Weekly Report | `scripts/run-seo-analysis.js` | Automated weekly SEO reports |
+| Category SEO | `generate-category-seo.js` | Bulk category metadata generation |
+| Log Parser | `parse-apache-logs.js` | Apache log analysis for keyword extraction |
+
+### SEO Features
+
+1. **Search Log Analysis**
+   - Tracks internal search queries and zero-result searches
+   - Identifies content gaps and trending keywords
+   - Week-over-week trend comparison
+
+2. **Search Engine Referral Tracking**
+   - Extracts Google/Bing queries from referrer URLs
+   - Maps queries to landing pages
+   - Identifies high-performing content
+
+3. **Multilingual SEO**
+   - 20 supported languages: EN, DE, RU, ES, ZH, JA, TH, KO, PT, FR, IT, NL, PL, CS, AR, EL, VI, ID, TR, HU
+   - Auto-translation via Google Translate API with caching
+   - Hreflang tags for international targeting
+
+4. **Schema.org Structured Data**
+   - `ImageGallery` for gallery pages
+   - `ImageObject` for photo pages
+   - `VideoObject` for video pages
+   - `Person` for creator profiles
+   - `BreadcrumbList` for navigation
+   - `Organization` for site identity
+
+5. **SEO Issue Detection**
+   - Missing/duplicate titles
+   - Thin content identification
+   - Categories without SEO metadata
+   - Underperforming content alerts
+
+6. **Weekly Email Reports**
+   - Automated HTML reports sent to configured email
+   - Top search terms and trending keywords
+   - Content gap opportunities
+   - SEO issues summary with priorities
+   - Internal linking recommendations
+
+### Database Tables (SEO)
+
+```sql
+-- Category SEO metadata (multilingual)
+category_seo (category_id, language, seo_title, seo_description, seo_keywords)
+
+-- Image SEO metadata
+image_seo (image_id, language, seo_title, seo_description, alt_text)
+
+-- Search logs for analysis
+search_logs (query, results_count, country, created_at)
+
+-- Search engine referrals
+search_engine_referrals (engine, search_query, landing_page, country)
+
+-- Keyword learning
+image_keywords (image_id, keyword, weight)
+
+-- Content demand tracking
+content_demand (term, source, search_count, has_content)
+
+-- SEO audit trail
+seo_audit_log (audit_type, entity_type, issue_type, severity, details)
+
+-- Translation cache
+translations_cache (original_text, translated_text, target_lang)
+```
+
+### Running SEO Analysis
+
+```bash
+# Run weekly SEO analysis manually
+node scripts/run-seo-analysis.js
+
+# Schedule via cron (Sundays at 6 AM)
+# 0 6 * * 0 /usr/bin/node /var/www/html/boyvue/scripts/run-seo-analysis.js
+```
+
+### SEO Configuration
+
+SEO settings are defined in `config/seo.ttl`:
+- Site name and URL
+- Default OG image
+- Twitter card settings
+- Meta templates per page type
+- Hreflang configuration
+
 ## License
 
 MIT
