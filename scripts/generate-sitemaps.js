@@ -30,6 +30,7 @@ async function generateSitemapIndex() {
   <sitemap><loc>https://boyvue.com/sitemap-videos-3.xml</loc></sitemap>
   <sitemap><loc>https://boyvue.com/image-sitemap.xml</loc></sitemap>
   <sitemap><loc>https://boyvue.com/video-sitemap.xml</loc></sitemap>
+  <sitemap><loc>https://boyvue.com/category-photos-sitemap.xml</loc></sitemap>
 </sitemapindex>`;
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), xml);
   console.log('Generated sitemap.xml');
@@ -92,6 +93,47 @@ async function generateVideoSitemap() {
   console.log(`Generated video-sitemap.xml (${vids.rows.length} videos)`);
 }
 
+async function generateCategoryPhotosSitemap() {
+  const cats = await pool.query(`
+    SELECT c.id, c.catname, c.updated_at,
+           array_agg(i.thumbnail_path ORDER BY i.view_count DESC) as photos,
+           array_agg(i.title ORDER BY i.view_count DESC) as titles
+    FROM category c
+    JOIN image i ON i.belongs_to_gallery = c.id
+    WHERE c.photo_count > 0
+      AND i.local_path NOT LIKE '%.mp4' AND i.local_path NOT LIKE '%.webm'
+    GROUP BY c.id, c.catname, c.updated_at
+    ORDER BY c.photo_count DESC
+    LIMIT 500
+  `);
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">`;
+  for (const cat of cats.rows) {
+    const lastmod = cat.updated_at ? new Date(cat.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    xml += `
+  <url>
+    <loc>https://boyvue.com/c/${cat.id}</loc>
+    <lastmod>${lastmod}</lastmod>`;
+    const photos = (cat.photos || []).slice(0, 10);
+    const titles = cat.titles || [];
+    for (let i = 0; i < photos.length; i++) {
+      if (photos[i]) {
+        const title = esc(titles[i] || cat.catname || 'Photo');
+        xml += `
+    <image:image>
+      <image:loc>https://boyvue.com/media/${photos[i]}</image:loc>
+      <image:title>${title}</image:title>
+    </image:image>`;
+      }
+    }
+    xml += `
+  </url>`;
+  }
+  xml += '\n</urlset>';
+  fs.writeFileSync(path.join(publicDir, 'category-photos-sitemap.xml'), xml);
+  console.log(`Generated category-photos-sitemap.xml (${cats.rows.length} categories)`);
+}
+
 async function generateImageSitemap() {
   const imgs = await pool.query(`SELECT id, title, thumbnail_path FROM image
     WHERE local_path NOT LIKE '%.mp4' AND local_path NOT LIKE '%.webm'
@@ -124,6 +166,7 @@ async function main() {
     await generateVideosSitemap(3);
     await generateVideoSitemap();
     await generateImageSitemap();
+    await generateCategoryPhotosSitemap();
     console.log('All sitemaps generated successfully!');
   } catch (e) {
     console.error('Error generating sitemaps:', e.message);
