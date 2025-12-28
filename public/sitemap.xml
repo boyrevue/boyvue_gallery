@@ -4,7 +4,7 @@
   <sitemap><loc>https://boyvue.com/sitemap-videos-1.xml</loc></sitemap>
   <sitemap><loc>https://boyvue.com/sitemap-videos-2.xml</loc></sitemap>
   <sitemap><loc>https://boyvue.com/sitemap-videos-3.xml</loc></sitemap>
-  <sitemap><loc>https://boyvue.com/image-sitemap.xml</loc></sitemap>
-  <sitemap><loc>https://boyvue.com/video-sitemap.xml</loc></sitemap>
-  <sitemap><loc>https://boyvue.com/category-photos-sitemap.xml</loc></sitemap>
+  <sitemap><loc>https://boyvue.com/sitemap-image.xml</loc></sitemap>
+  <sitemap><loc>https://boyvue.com/sitemap-video.xml</loc></sitemap>
+  <sitemap><loc>https://boyvue.com/sitemap-category-photos.xml</loc></sitemap>
 </sitemapindex>

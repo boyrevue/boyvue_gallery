@@ -15,5 +15,5 @@ Disallow: /
 
 # Sitemaps
 Sitemap: https://boyvue.com/sitemap.xml
-Sitemap: https://boyvue.com/video-sitemap.xml
-Sitemap: https://boyvue.com/category-photos-sitemap.xml
+Sitemap: https://boyvue.com/sitemap-video.xml
+Sitemap: https://boyvue.com/sitemap-category-photos.xml

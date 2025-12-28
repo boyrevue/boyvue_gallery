@@ -28,9 +28,9 @@ async function generateSitemapIndex() {
   <sitemap><loc>https://boyvue.com/sitemap-videos-1.xml</loc></sitemap>
   <sitemap><loc>https://boyvue.com/sitemap-videos-2.xml</loc></sitemap>
   <sitemap><loc>https://boyvue.com/sitemap-videos-3.xml</loc></sitemap>
-  <sitemap><loc>https://boyvue.com/image-sitemap.xml</loc></sitemap>
-  <sitemap><loc>https://boyvue.com/video-sitemap.xml</loc></sitemap>
-  <sitemap><loc>https://boyvue.com/category-photos-sitemap.xml</loc></sitemap>
+  <sitemap><loc>https://boyvue.com/sitemap-image.xml</loc></sitemap>
+  <sitemap><loc>https://boyvue.com/sitemap-video.xml</loc></sitemap>
+  <sitemap><loc>https://boyvue.com/sitemap-category-photos.xml</loc></sitemap>
 </sitemapindex>`;
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), xml);
   console.log('Generated sitemap.xml');
@@ -89,8 +89,8 @@ async function generateVideoSitemap() {
   </url>`;
   }
   xml += '\n</urlset>';
-  fs.writeFileSync(path.join(publicDir, 'video-sitemap.xml'), xml);
-  console.log(`Generated video-sitemap.xml (${vids.rows.length} videos)`);
+  fs.writeFileSync(path.join(publicDir, 'sitemap-video.xml'), xml);
+  console.log(`Generated sitemap-video.xml (${vids.rows.length} videos)`);
 }
 
 async function generateCategoryPhotosSitemap() {
@@ -130,8 +130,8 @@ async function generateCategoryPhotosSitemap() {
   </url>`;
   }
   xml += '\n</urlset>';
-  fs.writeFileSync(path.join(publicDir, 'category-photos-sitemap.xml'), xml);
-  console.log(`Generated category-photos-sitemap.xml (${cats.rows.length} categories)`);
+  fs.writeFileSync(path.join(publicDir, 'sitemap-category-photos.xml'), xml);
+  console.log(`Generated sitemap-category-photos.xml (${cats.rows.length} categories)`);
 }
 
 async function generateImageSitemap() {
@@ -152,8 +152,8 @@ async function generateImageSitemap() {
   </url>`;
   }
   xml += '\n</urlset>';
-  fs.writeFileSync(path.join(publicDir, 'image-sitemap.xml'), xml);
-  console.log(`Generated image-sitemap.xml (${imgs.rows.length} images)`);
+  fs.writeFileSync(path.join(publicDir, 'sitemap-image.xml'), xml);
+  console.log(`Generated sitemap-image.xml (${imgs.rows.length} images)`);
 }
 
 async function main() {
