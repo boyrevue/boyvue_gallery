@@ -128,7 +128,7 @@ router.get('/', requireAuth, async (req, res) => {
   
   try {
     let query = `
-      SELECT p.*, uf.is_hot, uf.theme_id, uf.user_theme_id, uf.created_at as favorited_at,
+      SELECT p.id, p.username, p.display_name, p.avatar_url, p.is_online, p.follower_count, uf.is_hot, uf.theme_id, uf.user_theme_id, uf.created_at as favorited_at,
              t.name as theme_name, t.slug as theme_slug,
              ut.name as custom_theme_name, ut.icon as custom_theme_icon,
              pl.name as platform_name, pl.slug as platform_slug
@@ -153,10 +153,10 @@ router.get('/', requireAuth, async (req, res) => {
       query += " ORDER BY uf.created_at DESC";
     }
     
-    const result = await pool.query(query, params);
+    console.log("Query:", query); console.log("Params:", params); const result = await pool.query(query, params); console.log("Result rows:", result.rows.length);
     res.json({ success: true, favorites: result.rows, page: parseInt(page) });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to get favorites' });
+    console.error("Favorites error:", err); res.status(500).json({ error: "Failed to get favorites" });
   }
 });
 
@@ -180,7 +180,7 @@ router.get('/next', requireAuth, async (req, res) => {
     query += ` ORDER BY RANDOM() LIMIT $${idx}`;
     params.push(parseInt(count));
     
-    const result = await pool.query(query, params);
+    console.log("Query:", query); console.log("Params:", params); const result = await pool.query(query, params); console.log("Result rows:", result.rows.length);
     res.json({ success: true, performers: result.rows, remaining: result.rows.length });
   } catch (err) {
     res.status(500).json({ error: 'Failed to get performers' });
