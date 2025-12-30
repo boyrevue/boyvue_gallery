@@ -70,7 +70,13 @@ function HotOrNotPage() {
 
   const getRefreshableUrl = (url) => {
     if (!url) return '/placeholder.jpg';
-    return `${url}${url.includes('?') ? '&' : '?'}refresh=${imageKey}`;
+    // Convert to live stream thumbnail for Chaturbate
+    let liveUrl = url;
+    if (url.includes('thumb.live.mmcdn.com/ri/')) {
+      // Use roomimg for actual live stream thumbnails
+      liveUrl = url.replace('thumb.live.mmcdn.com/ri/', 'roomimg.stream.highwebmedia.com/ri/');
+    }
+    return `${liveUrl}${liveUrl.includes('?') ? '&' : '?'}t=${imageKey}`;
   };
 
   const fetchThemes = useCallback(async () => {
