@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PerformerCard from '../components/PerformerCard';
 
 function PerformersPage() {
+  const { t } = useTranslation();
+  const { auth } = useOutletContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [performers, setPerformers] = useState([]);
   const [platforms, setPlatforms] = useState([]);
@@ -10,29 +13,16 @@ function PerformersPage() {
   const [loading, setLoading] = useState(true);
 
   const platform = searchParams.get('platform') || '';
-  const sort = searchParams.get('sort') || 'priority';
+  const sort = searchParams.get('sort') || 'popular';
   const online = searchParams.get('online') || '';
   const search = searchParams.get('search') || '';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = 24;
 
   useEffect(() => {
-    fetchPlatforms();
-  }, []);
-
-  useEffect(() => {
     fetchPerformers();
+    fetchPlatforms();
   }, [platform, sort, online, search, page]);
-
-  async function fetchPlatforms() {
-    try {
-      const res = await fetch('/api/creatives/platforms');
-      const data = await res.json();
-      if (data.success) setPlatforms(data.platforms);
-    } catch (err) {
-      console.error('Error fetching platforms:', err);
-    }
-  }
 
   async function fetchPerformers() {
     setLoading(true);
@@ -40,11 +30,11 @@ function PerformersPage() {
       const params = new URLSearchParams({
         limit,
         offset: (page - 1) * limit,
-        sort
+        ...(platform && { platform }),
+        ...(sort && { sort }),
+        ...(online && { online: 'true' }),
+        ...(search && { search })
       });
-      if (platform) params.append('platform', platform);
-      if (online) params.append('online', online);
-      if (search) params.append('search', search);
 
       const res = await fetch(`/api/creatives/performers?${params}`);
       const data = await res.json();
@@ -60,6 +50,14 @@ function PerformersPage() {
     }
   }
 
+  async function fetchPlatforms() {
+    try {
+      const res = await fetch('/api/creatives/platforms');
+      const data = await res.json();
+      if (data.success) setPlatforms(data.platforms);
+    } catch (err) {}
+  }
+
   function updateFilter(key, value) {
     const params = new URLSearchParams(searchParams);
     if (value) {
@@ -67,7 +65,6 @@ function PerformersPage() {
     } else {
       params.delete(key);
     }
-    // Only reset page when changing other filters, not page itself
     if (key !== 'page') {
       params.set('page', '1');
     }
@@ -80,81 +77,66 @@ function PerformersPage() {
     <div className="performers-page">
       <div className="container">
         <div className="page-header">
-          <h1>Browse Creatives</h1>
-          <p>{total} performers from {platforms.length} platforms</p>
-        </div>
+          <h1>{t('performers.title')}</h1>
 
-        {/* Filters */}
-        <div className="filters">
-          <div className="filter-group">
-            <label>Platform</label>
+          <div className="filters">
             <select value={platform} onChange={e => updateFilter('platform', e.target.value)}>
-              <option value="">All Platforms</option>
+              <option value="">{t('performers.allPlatforms')}</option>
               {platforms.map(p => (
-                <option key={p.slug} value={p.slug}>{p.name}</option>
+                <option key={p.id} value={p.slug}>{p.name}</option>
               ))}
             </select>
-          </div>
 
-          <div className="filter-group">
-            <label>Sort By</label>
             <select value={sort} onChange={e => updateFilter('sort', e.target.value)}>
-              <option value="priority">Featured</option>
-              <option value="popular">Most Popular</option>
-              <option value="newest">Newest</option>
-              <option value="online">Online First</option>
+              <option value="popular">{t('performers.popular')}</option>
+              <option value="newest">{t('performers.newest')}</option>
+              <option value="followers">{t('performers.mostFollowers')}</option>
             </select>
-          </div>
 
-          <div className="filter-group">
-            <label>
+            <label className="online-filter">
               <input
                 type="checkbox"
                 checked={online === 'true'}
                 onChange={e => updateFilter('online', e.target.checked ? 'true' : '')}
               />
-              Online Now
+              {t('performers.onlineOnly')}
             </label>
-          </div>
 
-          <div className="filter-group search">
             <input
-              type="search"
-              placeholder="Search performers..."
+              type="text"
+              placeholder={t('performers.search')}
               value={search}
               onChange={e => updateFilter('search', e.target.value)}
+              className="search-input"
             />
           </div>
         </div>
 
-        {/* Results */}
         {loading ? (
-          <div className="loading">Loading performers...</div>
-        ) : performers.length === 0 ? (
-          <div className="no-results">No performers found matching your criteria.</div>
+          <div className="loading">{t('performers.loading')}</div>
         ) : (
           <>
+            <p className="drag-tip">💡 Drag any performer to the ❤️ bar above to add to favourites</p>
             <div className="performers-grid">
               {performers.map(performer => (
-                <PerformerCard key={performer.id} performer={performer} />
+                <PerformerCard key={performer.id} performer={performer} draggable />
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="pagination">
                 <button
                   disabled={page <= 1}
                   onClick={() => updateFilter('page', String(page - 1))}
                 >
-                  Previous
+                  {t('performers.previous')}
                 </button>
-                <span>Page {page} of {totalPages}</span>
+                <span>{t('performers.page')} {page} {t('performers.of')} {totalPages}</span>
                 <button
                   disabled={page >= totalPages}
                   onClick={() => updateFilter('page', String(page + 1))}
                 >
-                  Next
+                  {t('performers.next')}
                 </button>
               </div>
             )}

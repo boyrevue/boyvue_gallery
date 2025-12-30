@@ -383,3 +383,98 @@ a:hover { text-decoration: underline; }
 .home-page {
   padding-top: 70px;
 }
+
+/* User Themes Grid */
+.user-themes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.user-theme-card {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.user-theme-card:hover {
+  border-color: #f60;
+  transform: translateY(-2px);
+}
+
+.theme-icon {
+  font-size: 36px;
+}
+
+.theme-info h3 {
+  color: #fff;
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.theme-count {
+  color: #888;
+  font-size: 13px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #1a1a1a;
+  border-radius: 16px;
+  margin: 20px 0;
+}
+
+.empty-icon {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.empty-state h3 {
+  color: #fff;
+  font-size: 24px;
+  margin: 0 0 10px;
+}
+
+.empty-state p {
+  color: #888;
+  margin: 0 0 20px;
+}
+
+.empty-state a {
+  color: #f60;
+}
+
+/* Themes CTA */
+.themes-cta {
+  text-align: center;
+  padding: 30px;
+  background: #111;
+  border-radius: 12px;
+  margin-top: 40px;
+}
+
+.themes-cta p {
+  color: #888;
+  margin: 0 0 16px;
+}
+
+/* Drag Tip */
+.drag-tip {
+  color: #888;
+  font-size: 13px;
+  margin-bottom: 20px;
+  padding: 10px 16px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  display: inline-block;
+}

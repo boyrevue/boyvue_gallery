@@ -32,27 +32,7 @@ router.get('/icons', (req, res) => {
 });
 
 // Get all themes (system + user's custom)
-router.get('/themes', requireAuth, async (req, res) => {
-  try {
-    // System themes
-    const systemThemes = await pool.query('SELECT id, name, slug, icon, NULL as user_id, false as is_custom FROM themes ORDER BY name');
-    
-    // User's custom themes
-    const userThemes = await pool.query(
-      'SELECT id, name, NULL as slug, icon, user_id, true as is_custom, color FROM user_themes WHERE user_id = $1 ORDER BY name',
-      [req.userId]
-    );
-    
-    res.json({ 
-      success: true, 
-      themes: systemThemes.rows,
-      customThemes: userThemes.rows,
-      icons: THEME_ICONS
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to get themes' });
-  }
-});
+router.get('/themes', requireAuth, async (req, res) => {  try {    // System themes    const systemThemes = await pool.query('SELECT id, name, slug, icon, NULL as user_id, false as is_custom FROM themes ORDER BY name');        // User's custom themes with performer count    const userThemes = await pool.query(`      SELECT ut.id, ut.name, NULL as slug, ut.icon, ut.user_id, true as is_custom, ut.color,             COUNT(uf.id) as count      FROM user_themes ut      LEFT JOIN user_favorites uf ON uf.user_theme_id = ut.id      WHERE ut.user_id = $1      GROUP BY ut.id      ORDER BY ut.name    `, [req.userId]);        res.json({       success: true,       themes: systemThemes.rows,      customThemes: userThemes.rows,      icons: THEME_ICONS    });  } catch (err) {    res.status(500).json({ error: 'Failed to get themes' });  }});
 
 // Create custom theme
 router.post('/themes', requireAuth, async (req, res) => {
@@ -117,7 +97,7 @@ router.delete('/themes/:themeId', requireAuth, async (req, res) => {
 
 // Get user's favorites
 router.get('/', requireAuth, async (req, res) => {
-  const { theme_id, user_theme_id, hot_only = 'true', page = 1, limit = 20 } = req.query;
+  const { theme_id, user_theme_id, hot_only = 'false', page = 1, limit = 20, all } = req.query;
   const offset = (page - 1) * limit;
   
   try {
@@ -140,7 +120,7 @@ router.get('/', requireAuth, async (req, res) => {
     if (theme_id) { query += ` AND uf.theme_id = $${idx}`; params.push(theme_id); idx++; }
     if (user_theme_id) { query += ` AND uf.user_theme_id = $${idx}`; params.push(user_theme_id); idx++; }
     
-    query += ` ORDER BY uf.created_at DESC LIMIT $${idx} OFFSET $${idx+1}`;
+    if (all !== "true") { query += ` ORDER BY uf.created_at DESC LIMIT $${idx} OFFSET $${idx+1}`; params.push(limit, offset); } else { query += " ORDER BY uf.created_at DESC"; }
     params.push(limit, offset);
     
     const result = await pool.query(query, params);

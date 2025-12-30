@@ -1,418 +1,269 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import '../styles/HotOrNot.css';
 
 const API = '/api';
+const THEME_ICONS = ['🔥','💪','🧑','🐻','🌶️','🌸','👑','👨','⚽','🎓','💕','🌈','⭐','💎','🎭','🎪','🏆','🎯','💫','🦁'];
 
-const AI_SUGGESTIONS = [
-  "What type of performer is this?",
-  "How would you classify them?",
-  "What category fits best?",
-  "Describe this performer in one word...",
-  "What theme matches their vibe?"
-];
-
-const SUGGESTED_THEMES = ['Couples', 'Black', 'Asian', 'Latino', 'Skinny', 'Faves', 'BDSM'];
-const REFRESH_OPTIONS = [20, 30, 45, 60];
-
-function HotOrNotPage() {
+function FavouritesPage() {
+  const { t } = useTranslation();
   const { auth } = useOutletContext();
-  const [performers, setPerformers] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ hotCount: 0, notCount: 0, totalRated: 0, byTheme: [], byCustomTheme: [] });
+  const [favorites, setFavorites] = useState([]);
   const [themes, setThemes] = useState([]);
-  const [customThemes, setCustomThemes] = useState([]);
-  const [availableIcons, setAvailableIcons] = useState([]);
-  const [swipeDirection, setSwipeDirection] = useState(null);
-  const [lastAction, setLastAction] = useState(null);
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [pendingPerformer, setPendingPerformer] = useState(null);
-  const [themeInput, setThemeInput] = useState('');
-  const [aiMessage, setAiMessage] = useState('');
-  const [imageKey, setImageKey] = useState(Date.now());
-  const [refreshRate, setRefreshRate] = useState(() => {
-    const saved = localStorage.getItem('thumbRefreshRate');
-    return saved ? parseInt(saved) : 20;
-  });
-  const [showSettings, setShowSettings] = useState(false);
-  const [recentlyUsedThemes, setRecentlyUsedThemes] = useState([]);
-  const [countdown, setCountdown] = useState(0);
-  
-  const cardRef = useRef(null);
-  const inputRef = useRef(null);
-  const startPos = useRef({ x: 0, y: 0 });
-  const currentPos = useRef({ x: 0, y: 0 });
-  const isDragging = useRef(false);
-
-  // Refresh thumbnail based on rate
-  useEffect(() => {
-    setCountdown(refreshRate);
-    const countdownInterval = setInterval(() => {
-      setCountdown(prev => prev > 1 ? prev - 1 : refreshRate);
-    }, 1000);
-    
-    const refreshInterval = setInterval(() => {
-      setImageKey(Date.now());
-    }, refreshRate * 1000);
-    
-    return () => {
-      clearInterval(countdownInterval);
-      clearInterval(refreshInterval);
-    };
-  }, [refreshRate, currentIndex]);
-
-  const handleRefreshRateChange = (rate) => {
-    setRefreshRate(rate);
-    localStorage.setItem('thumbRefreshRate', rate.toString());
-    setImageKey(Date.now()); // Immediate refresh
-  };
-
-  const getRefreshableUrl = (url) => {
-    if (!url) return '/placeholder.jpg';
-    return `${url}${url.includes('?') ? '&' : '?'}t=${imageKey}`;
-  };
-
-  const fetchThemes = useCallback(async () => {
-    if (!auth?.user) return;
-    try {
-      const res = await fetch(`${API}/favorites/themes`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        setThemes(data.themes || []);
-        setCustomThemes(data.customThemes || []);
-        setAvailableIcons(data.icons || []);
-      }
-    } catch (err) {}
-  }, [auth?.user]);
-
-  const fetchPerformers = useCallback(async () => {
-    if (!auth?.user) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/favorites/next?count=10`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) { setPerformers(data.performers); setCurrentIndex(0); }
-    } catch (err) {}
-    setLoading(false);
-  }, [auth?.user]);
-
-  const fetchStats = useCallback(async () => {
-    if (!auth?.user) return;
-    try {
-      const res = await fetch(`${API}/favorites/stats`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) setStats(data.stats);
-    } catch (err) {}
-  }, [auth?.user]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateTheme, setShowCreateTheme] = useState(false);
+  const [newThemeName, setNewThemeName] = useState('');
+  const [newThemeIcon, setNewThemeIcon] = useState('🏷️');
+  const [dragOverTheme, setDragOverTheme] = useState(null);
+  const [activeTheme, setActiveTheme] = useState(null);
 
   useEffect(() => {
-    if (auth?.user) { fetchThemes(); fetchPerformers(); fetchStats(); }
-  }, [auth?.user]);
-
-  useEffect(() => {
-    if (showThemeSelector && inputRef.current) {
-      inputRef.current.focus();
-      setAiMessage(AI_SUGGESTIONS[Math.floor(Math.random() * AI_SUGGESTIONS.length)]);
+    if (auth?.isAuthenticated) {
+      fetchData();
+    } else {
+      setLoading(false);
     }
-  }, [showThemeSelector]);
+  }, [auth?.isAuthenticated]);
 
-  const moveToNext = () => {
-    setSwipeDirection(null);
-    setShowThemeSelector(false);
-    setPendingPerformer(null);
-    setThemeInput('');
-    setImageKey(Date.now());
-    if (currentIndex >= performers.length - 1) fetchPerformers();
-    else setCurrentIndex(prev => prev + 1);
-  };
-
-  const ratePerformer = async (isHot) => {
-    const performer = performers[currentIndex];
-    if (!performer) return;
-    setSwipeDirection(isHot ? 'right' : 'left');
-    setLastAction({ performer, isHot });
-
+  const fetchData = async () => {
     try {
-      await fetch(`${API}/favorites/${performer.id}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ isHot })
-      });
-      setStats(prev => ({
-        ...prev,
-        hotCount: isHot ? prev.hotCount + 1 : prev.hotCount,
-        notCount: !isHot ? prev.notCount + 1 : prev.notCount,
-        totalRated: prev.totalRated + 1
-      }));
-      if (isHot) {
-        setPendingPerformer(performer);
-        setTimeout(() => { setSwipeDirection(null); setShowThemeSelector(true); }, 300);
-      } else {
-        setTimeout(moveToNext, 300);
-      }
-    } catch (err) {}
+      const [favesRes, themesRes] = await Promise.all([
+        fetch(`${API}/favorites?all=true`, { credentials: 'include' }),
+        fetch(`${API}/favorites/themes`, { credentials: 'include' })
+      ]);
+      
+      const favesData = await favesRes.json();
+      const themesData = await themesRes.json();
+      
+      if (favesData.success) setFavorites(favesData.favorites || []);
+      if (themesData.success) setThemes(themesData.customThemes || []);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const findOrCreateTheme = async (themeName) => {
-    const name = themeName.trim();
-    if (!name) return null;
-    
-    const systemMatch = themes.find(t => t.name.toLowerCase() === name.toLowerCase());
-    if (systemMatch) return { id: systemMatch.id, isCustom: false };
-    
-    const customMatch = customThemes.find(t => t.name.toLowerCase() === name.toLowerCase());
-    if (customMatch) return { id: customMatch.id, isCustom: true };
-    
-    const icons = ['🏷️','⭐','💫','✨','🎯','💎','🔮','🎪','🎭','🎨'];
-    const icon = icons[customThemes.length % icons.length];
+  const createTheme = async (e) => {
+    e.preventDefault();
+    if (!newThemeName.trim()) return;
     
     try {
       const res = await fetch(`${API}/favorites/themes`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ name, icon })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: newThemeName, icon: newThemeIcon })
       });
+      
       const data = await res.json();
       if (data.success) {
-        setCustomThemes(prev => [...prev, data.theme]);
-        return { id: data.theme.id, isCustom: true };
+        setThemes(prev => [...prev, data.theme]);
+        setNewThemeName('');
+        setNewThemeIcon('🏷️');
+        setShowCreateTheme(false);
       }
-    } catch (err) {}
-    return null;
+    } catch (err) {
+      console.error('Error creating theme:', err);
+    }
   };
 
-  const classifyWithTheme = async (themeName) => {
-    if (!pendingPerformer || !themeName) return;
-    
-    const theme = await findOrCreateTheme(themeName);
-    if (!theme) return;
-    
-    try {
-      const endpoint = theme.isCustom ? 'custom-theme' : 'theme';
-      const body = theme.isCustom ? { userThemeId: theme.id } : { themeId: theme.id };
-      await fetch(`${API}/favorites/${pendingPerformer.id}/${endpoint}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify(body)
-      });
-      setRecentlyUsedThemes(prev => [themeName, ...prev.filter(t => t !== themeName)].slice(0, 5));
-      fetchStats();
-    } catch (err) {}
-    moveToNext();
+  const handleDragStart = (e, favorite) => {
+    e.dataTransfer.setData('favoriteId', favorite.id.toString());
+    e.dataTransfer.setData('performerId', favorite.performer_id.toString());
   };
 
-  const handleInputSubmit = (e) => {
+  const handleDragOver = (e, themeId) => {
     e.preventDefault();
-    if (themeInput.trim()) classifyWithTheme(themeInput.trim());
+    setDragOverTheme(themeId);
   };
 
-  const handleQuickTheme = (themeName) => {
-    setThemeInput(themeName);
-    classifyWithTheme(themeName);
+  const handleDragLeave = () => {
+    setDragOverTheme(null);
   };
 
-  const undoLast = async () => {
-    if (!lastAction) return;
+  const handleDrop = async (e, themeId) => {
+    e.preventDefault();
+    setDragOverTheme(null);
+    
+    const performerId = e.dataTransfer.getData('performerId');
+    if (!performerId) return;
+    
     try {
-      const res = await fetch(`${API}/favorites/undo`, { method: 'POST', credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        setStats(prev => ({
-          ...prev,
-          hotCount: lastAction.isHot ? prev.hotCount - 1 : prev.hotCount,
-          notCount: !lastAction.isHot ? prev.notCount - 1 : prev.notCount,
-          totalRated: prev.totalRated - 1
-        }));
-        setPerformers(prev => [lastAction.performer, ...prev.slice(currentIndex)]);
-        setCurrentIndex(0);
-        setLastAction(null);
-        setShowThemeSelector(false);
-        setPendingPerformer(null);
-      }
-    } catch (err) {}
+      await fetch(`${API}/favorites/${performerId}/custom-theme`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ userThemeId: themeId })
+      });
+      
+      // Update local state
+      setFavorites(prev => prev.map(f => 
+        f.performer_id.toString() === performerId 
+          ? { ...f, user_theme_id: themeId }
+          : f
+      ));
+      
+      // Update theme count
+      setThemes(prev => prev.map(th => 
+        th.id === themeId 
+          ? { ...th, count: (parseInt(th.count) || 0) + 1 }
+          : th
+      ));
+    } catch (err) {
+      console.error('Error assigning theme:', err);
+    }
   };
 
-  const handleDragStart = (e) => {
-    if (!cardRef.current || showThemeSelector) return;
-    isDragging.current = true;
-    const point = e.touches ? e.touches[0] : e;
-    startPos.current = { x: point.clientX, y: point.clientY };
-    cardRef.current.style.transition = 'none';
+  const getThemeFavorites = (themeId) => {
+    return favorites.filter(f => f.user_theme_id === themeId);
   };
 
-  const handleDragMove = (e) => {
-    if (!isDragging.current || !cardRef.current) return;
-    const point = e.touches ? e.touches[0] : e;
-    const dx = point.clientX - startPos.current.x;
-    const dy = point.clientY - startPos.current.y;
-    currentPos.current = { x: dx, y: dy };
-    cardRef.current.style.transform = `translateX(${dx}px) translateY(${dy}px) rotate(${dx * 0.05}deg)`;
+  const getUntaggedFavorites = () => {
+    return favorites.filter(f => !f.user_theme_id);
   };
 
-  const handleDragEnd = () => {
-    if (!isDragging.current || !cardRef.current) return;
-    isDragging.current = false;
-    cardRef.current.style.transition = 'transform 0.3s';
-    if (currentPos.current.x > 100) ratePerformer(true);
-    else if (currentPos.current.x < -100) ratePerformer(false);
-    else cardRef.current.style.transform = 'translateX(0) translateY(0) rotate(0deg)';
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (showThemeSelector) {
-        if (e.key === 'Escape') moveToNext();
-        return;
-      }
-      if (e.key === 'ArrowRight') ratePerformer(true);
-      else if (e.key === 'ArrowLeft') ratePerformer(false);
-      else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) undoLast();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, performers, lastAction, showThemeSelector]);
-
-  if (!auth?.user) {
+  if (!auth?.isAuthenticated) {
     return (
-      <div className="hon-container">
-        <div className="hon-login-prompt">
-          <div className="hon-icon">🔥</div>
-          <h2>Hot or Not</h2>
-          <p>Sign in to rate performers and build your collection</p>
-          <button onClick={auth?.openLogin} className="btn btn-primary btn-large">Sign In to Start</button>
+      <div className="faves-page">
+        <div className="container">
+          <div className="empty-state">
+            <span className="empty-icon">❤️</span>
+            <h3>{t('faves.signInRequired')}</h3>
+            <p>Sign in to save and organize your favourites</p>
+            <button onClick={auth?.openLogin} className="btn btn-primary">
+              {t('nav.signIn')}
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const currentPerformer = performers[currentIndex];
-  const allExistingThemes = [...themes.map(t => t.name), ...customThemes.map(t => t.name)];
-  const suggestedForInput = themeInput 
-    ? [...allExistingThemes, ...SUGGESTED_THEMES].filter(t => 
-        t.toLowerCase().includes(themeInput.toLowerCase()) && t.toLowerCase() !== themeInput.toLowerCase()
-      ).slice(0, 5)
-    : [...recentlyUsedThemes, ...SUGGESTED_THEMES.filter(t => !recentlyUsedThemes.includes(t))].slice(0, 8);
+  if (loading) {
+    return <div className="loading">{t('performers.loading')}</div>;
+  }
 
   return (
-    <div className="hon-container">
-      <div className="hon-header">
-        <div className="hon-stats">
-          <span>🔥 {stats.hotCount}</span>
-          <span>❌ {stats.notCount}</span>
-          <span>📊 {stats.totalRated}</span>
+    <div className="faves-page">
+      <div className="container">
+        <div className="faves-header">
+          <h1>❤️ {t('nav.favourites')}</h1>
+          <p>{favorites.length} performers saved</p>
         </div>
-        <button onClick={() => setShowSettings(!showSettings)} className="settings-btn">⚙️</button>
-      </div>
 
-      {showSettings && (
-        <div className="settings-panel">
-          <p>Thumbnail refresh rate:</p>
-          <div className="refresh-options">
-            {REFRESH_OPTIONS.map(rate => (
-              <button
-                key={rate}
-                onClick={() => handleRefreshRateChange(rate)}
-                className={`refresh-btn ${refreshRate === rate ? 'active' : ''}`}
+        {/* Themes Sidebar */}
+        <div className="faves-layout">
+          <div className="themes-sidebar">
+            <div className="sidebar-header">
+              <h3>Your Themes</h3>
+              <button 
+                className="btn-add-theme"
+                onClick={() => setShowCreateTheme(!showCreateTheme)}
               >
-                {rate}s
+                +
               </button>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
 
-      {showThemeSelector && pendingPerformer ? (
-        <div className="ai-classifier">
-          <div className="ai-header">
-            <div className="ai-avatar">🤖</div>
-            <div className="ai-bubble">
-              <p>{aiMessage}</p>
-              <span className="performer-name">for <strong>{pendingPerformer.display_name}</strong></span>
+            {showCreateTheme && (
+              <form onSubmit={createTheme} className="create-theme-form">
+                <div className="icon-picker">
+                  {THEME_ICONS.slice(0, 10).map(icon => (
+                    <button
+                      key={icon}
+                      type="button"
+                      className={`icon-btn ${newThemeIcon === icon ? 'active' : ''}`}
+                      onClick={() => setNewThemeIcon(icon)}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={newThemeName}
+                  onChange={e => setNewThemeName(e.target.value)}
+                  placeholder="Theme name..."
+                  className="theme-input"
+                />
+                <button type="submit" className="btn btn-primary btn-sm">Create</button>
+              </form>
+            )}
+
+            <div className="themes-list">
+              <button
+                className={`theme-item ${activeTheme === null ? 'active' : ''}`}
+                onClick={() => setActiveTheme(null)}
+              >
+                <span className="theme-icon">📋</span>
+                <span className="theme-name">All Favourites</span>
+                <span className="theme-count">{favorites.length}</span>
+              </button>
+
+              <button
+                className={`theme-item ${activeTheme === 'untagged' ? 'active' : ''} ${dragOverTheme === 'untagged' ? 'drag-over' : ''}`}
+                onClick={() => setActiveTheme('untagged')}
+              >
+                <span className="theme-icon">🏷️</span>
+                <span className="theme-name">Uncategorized</span>
+                <span className="theme-count">{getUntaggedFavorites().length}</span>
+              </button>
+
+              {themes.map(theme => (
+                <button
+                  key={theme.id}
+                  className={`theme-item ${activeTheme === theme.id ? 'active' : ''} ${dragOverTheme === theme.id ? 'drag-over' : ''}`}
+                  onClick={() => setActiveTheme(theme.id)}
+                  onDragOver={(e) => handleDragOver(e, theme.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, theme.id)}
+                >
+                  <span className="theme-icon">{theme.icon}</span>
+                  <span className="theme-name">{theme.name}</span>
+                  <span className="theme-count">{theme.count || 0}</span>
+                </button>
+              ))}
             </div>
           </div>
-          
-          <div className="performer-mini">
-            <img key={imageKey} src={getRefreshableUrl(pendingPerformer.avatar_url)} alt="" />
-            <div className="refresh-countdown">{countdown}s</div>
-          </div>
 
-          <form onSubmit={handleInputSubmit} className="theme-input-form">
-            <input
-              ref={inputRef}
-              type="text"
-              value={themeInput}
-              onChange={e => setThemeInput(e.target.value)}
-              placeholder="Type a theme (e.g., Twink, Muscle, Bear...)"
-              className="theme-text-input"
-              autoComplete="off"
-            />
-            <button type="submit" disabled={!themeInput.trim()} className="btn-send">→</button>
-          </form>
-
-          <div className="quick-themes">
-            {suggestedForInput.map(theme => (
-              <button key={theme} onClick={() => handleQuickTheme(theme)} className="quick-theme-btn">
-                {theme}
-              </button>
-            ))}
-          </div>
-
-          {customThemes.length > 0 && (
-            <div className="your-themes">
-              <p>Your themes:</p>
-              <div className="your-themes-list">
-                {customThemes.map(t => (
-                  <button key={t.id} onClick={() => handleQuickTheme(t.name)} className="your-theme-btn">
-                    {t.icon} {t.name}
-                    <span className="theme-count">{stats.byCustomTheme?.find(s => s.id === t.id)?.count || 0}</span>
-                  </button>
+          {/* Favorites Grid */}
+          <div className="faves-content">
+            {favorites.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon">🔍</span>
+                <h3>No favourites yet</h3>
+                <p>Drag performers from the homepage to add them here</p>
+              </div>
+            ) : (
+              <div className="faves-grid">
+                {(activeTheme === null 
+                  ? favorites 
+                  : activeTheme === 'untagged'
+                    ? getUntaggedFavorites()
+                    : getThemeFavorites(activeTheme)
+                ).map(fav => (
+                  <div
+                    key={fav.id}
+                    className="fave-card"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, fav)}
+                  >
+                    <img src={fav.avatar_url} alt={fav.display_name} />
+                    <div className="fave-info">
+                      <h4>{fav.display_name}</h4>
+                      {fav.is_online && <span className="live-badge">LIVE</span>}
+                    </div>
+                    <span className="drag-hint">Drag to theme</span>
+                  </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          <button onClick={moveToNext} className="btn-skip-text">Skip → Next performer</button>
-        </div>
-      ) : loading ? (
-        <div className="hon-loading"><div className="spinner"></div><p>Loading...</p></div>
-      ) : !currentPerformer ? (
-        <div className="hon-empty">
-          <div className="hon-icon">🎉</div>
-          <h3>All caught up!</h3>
-          <button onClick={fetchPerformers} className="btn btn-primary">Check for more</button>
-        </div>
-      ) : (
-        <>
-          <div className="hon-card-stack">
-            {performers[currentIndex + 1] && (
-              <div className="hon-card hon-card-next">
-                <img src={performers[currentIndex + 1].avatar_url} alt="" />
-              </div>
             )}
-            <div
-              ref={cardRef}
-              className={`hon-card ${swipeDirection === 'right' ? 'swipe-right' : ''} ${swipeDirection === 'left' ? 'swipe-left' : ''}`}
-              onMouseDown={handleDragStart} onMouseMove={handleDragMove}
-              onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}
-              onTouchStart={handleDragStart} onTouchMove={handleDragMove} onTouchEnd={handleDragEnd}
-            >
-              <img key={imageKey} src={getRefreshableUrl(currentPerformer.avatar_url)} alt={currentPerformer.display_name} draggable={false} />
-              <div className="refresh-indicator">{countdown}s ↻</div>
-              <div className="hon-card-info">
-                <h3>{currentPerformer.display_name}</h3>
-                <p>{currentPerformer.platform_name} • {(currentPerformer.follower_count || 0).toLocaleString()} followers</p>
-                {currentPerformer.is_online && <span className="live-badge">🟢 LIVE</span>}
-              </div>
-            </div>
           </div>
-          <div className="hon-buttons">
-            <button onClick={() => ratePerformer(false)} className="hon-btn hon-btn-not">✗</button>
-            <button onClick={undoLast} disabled={!lastAction} className="hon-btn hon-btn-undo">↩</button>
-            <button onClick={() => ratePerformer(true)} className="hon-btn hon-btn-hot">🔥</button>
-          </div>
-          <p className="hon-hint">Swipe or use arrow keys</p>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
 
-export default HotOrNotPage;
+export default FavouritesPage;
