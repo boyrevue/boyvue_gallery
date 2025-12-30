@@ -10,6 +10,7 @@ function HomePage() {
   const { auth } = useOutletContext();
   const [sections, setSections] = useState([]);
   const [stats, setStats] = useState({});
+  const [userThemeCount, setUserThemeCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [dragOver, setDragOver] = useState(false);
   const [recentFaves, setRecentFaves] = useState([]);
@@ -17,6 +18,12 @@ function HomePage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (auth?.isAuthenticated) {
+      fetchUserThemes();
+    }
+  }, [auth?.isAuthenticated]);
 
   async function fetchData() {
     try {
@@ -29,7 +36,6 @@ function HomePage() {
       const statsData = await statsRes.json();
 
       if (sectionsData.success) {
-        // Filter out browse-themes section (moved to Themes tab)
         const filtered = sectionsData.sections.filter(s => s.slug !== 'browse-themes');
         setSections(filtered);
       }
@@ -39,6 +45,16 @@ function HomePage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchUserThemes() {
+    try {
+      const res = await fetch(`${API}/favorites/themes`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        setUserThemeCount(data.customThemes?.length || 0);
+      }
+    } catch (err) {}
   }
 
   const handleDragOver = (e) => {
@@ -118,12 +134,12 @@ function HomePage() {
               <span className="stat-label">{t('home.liveNow')}</span>
             </div>
             <div className="stat">
-              <span className="stat-value">{stats.themes || 0}</span>
+              <span className="stat-value">{auth?.isAuthenticated ? userThemeCount : 0}</span>
               <span className="stat-label">{t('home.themes')}</span>
             </div>
             <div className="stat">
-              <span className="stat-value">{stats.galleries || 0}</span>
-              <span className="stat-label">{t('home.galleries')}</span>
+              <span className="stat-value">{recentFaves.length}</span>
+              <span className="stat-label">Favourites</span>
             </div>
           </div>
           <div className="hero-actions">

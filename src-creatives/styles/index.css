@@ -478,3 +478,22 @@ a:hover { text-decoration: underline; }
   border-radius: 8px;
   display: inline-block;
 }
+
+/* Fix header z-index */
+.header {
+  z-index: 200;
+}
+
+/* Fix drop zone z-index */
+.faves-drop-zone {
+  z-index: 50;
+}
+
+/* Card content style */
+.card-content {
+  cursor: grab;
+}
+
+.card-content:active {
+  cursor: grabbing;
+}
