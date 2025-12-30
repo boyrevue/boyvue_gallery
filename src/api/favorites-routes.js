@@ -146,8 +146,12 @@ router.get('/', requireAuth, async (req, res) => {
     if (theme_id) { query += ` AND uf.theme_id = $${idx}`; params.push(theme_id); idx++; }
     if (user_theme_id) { query += ` AND uf.user_theme_id = $${idx}`; params.push(user_theme_id); idx++; }
     
-    if (all !== "true") { query += ` ORDER BY uf.created_at DESC LIMIT $${idx} OFFSET $${idx+1}`; params.push(limit, offset); } else { query += " ORDER BY uf.created_at DESC"; }
-    params.push(limit, offset);
+    if (all !== "true") {
+      query += ` ORDER BY uf.created_at DESC LIMIT $${idx} OFFSET $${idx+1}`;
+      params.push(parseInt(limit), parseInt(offset));
+    } else {
+      query += " ORDER BY uf.created_at DESC";
+    }
     
     const result = await pool.query(query, params);
     res.json({ success: true, favorites: result.rows, page: parseInt(page) });
