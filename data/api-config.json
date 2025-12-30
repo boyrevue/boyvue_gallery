@@ -1,0 +1,23 @@
+{
+  "cloudflare": {
+    "apiToken": "2Lw4PGbylPQYF-lzW6IWkS_sfiqhZVi_CqYtircs",
+    "zoneId": "5a3c531eed36c69b050671de9598d9bb",
+    "email": "v.power@diggi.io",
+    "loginToken": "5a3c531eed36c69b050671de9598d9bb84a2b"
+  },
+  "google": {
+    "siteUrl": "https://boyvue.com",
+    "serviceAccountKey": null
+  },
+  "dataforseo": {
+    "login": "v.power@diggi.io",
+    "password": "e0dcf73d1115e2f9"
+  },
+  "bitwarden": {
+    "clientId": "user.ad996f34-02f3-47de-a955-b09800c4ca37",
+    "clientSecret": "emBmS03dk8YmXDMtGfgysyHIpgoajN",
+    "accessToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IkJDMzZDMjE0REI0OEYyMzVCNzdEQTNGMTcyMEMxQTM1QTk2MkVBNDNSUzI1NiIsIng1dCI6InZEYkNGTnRJOGpXM2ZhUHhjZ3dhTmFsaTZrTSIsInR5cCI6ImF0K2p3dCJ9.eyJpc3MiOiJodHRwczovL2lkZW50aXR5LmJpdHdhcmRlbi5jb20iLCJuYmYiOjE3NjcwMDkxMDQsImlhdCI6MTc2NzAwOTEwNCwiZXhwIjoxNzY3MDEyNzA0LCJzY29wZSI6WyJhcGkiXSwiYW1yIjpbIkFwcGxpY2F0aW9uIl0sImNsaWVudF9pZCI6InVzZXIuYWQ5OTZmMzQtMDJmMy00N2RlLWE5NTUtYjA5ODAwYzRjYTM3Iiwic3ViIjoiYWQ5OTZmMzQtMDJmMy00N2RlLWE5NTUtYjA5ODAwYzRjYTM3IiwidHlwZSI6IlVzZXIiLCJwcmVtaXVtIjpmYWxzZSwiZW1haWwiOiJ2aW5jZUBkaWdnaS5pbyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJzc3RhbXAiOiI1ZGUyOTBmZi0wMTg0LTQ4OGYtOTE5Yy02YjllNTQ4NTA5MGUiLCJuYW1lIjoiVmluY2UiLCJvcmdhZG1pbiI6Ijc0YTRjZWM4LTZlMGMtNDk1Mi1iMWVjLWIyZTMwMTg2MWExNCIsImRldmljZSI6ImJveXZ1ZS1hZG1pbi0xNzY3MDA5MTAwNzk1IiwiZGV2aWNldHlwZSI6IldpbmRvd3NEZXNrdG9wIiwianRpIjoiNDc0MDFGOEYwMkQ5NEVDOUM2NENERjQzNzAzNEE4RTcifQ.DwFw0VNgXYKTx-bO8lk-JSLtft7_z6kHvy8o5m5h2HV54rRYYZytQ4DTYHnmQNZJVhBGpTYYqbHp57WgnnWO3csOgWNZmSNK59u4Kq3mkLMt_wNdC2mLsTan3HPx5M-uhdx5ua-IhOoEPGhW7Ay2LCAULhCcP4TYQlEeo-5trYO-EwKRJWCqCZ10aB-m1aYaLwnHeHbKjmW0YoBxNHp2miQ3gOEJMuCqz5RpHHHZAWRbc_gZbgXqqymF6JK372Ra9gfOP3--Ji7FKmtcnotGFhK_iV7bNw0dROdDsyzb068F4omi5Uc35znWBjypf6cZCK_P-4gIPDUkJiB49I_L8Djj5y40bOAnERLazRgBjjQFKJlaTdc-AR4GddChRV9NUgfioppCJ-VKy0rMiZUjx8hb_84mmF5r-3JwfQRuOn4HTr_LauhZEojyZb6fhmwQwjPfu1oKp6en5qq2TG8vGrz0PqOgRaGGv3d6LZ4zXja4h1dwsrXpoHmxQ5ayzH3sZAyETKMuHtbwzfLqkouNNoY-M1D9WQiTheNPqmrkTNX7f4eaZOE8fFTmub43bO9TPur9KPxM9qAqWVEIPyu2Me6wiy6DFDep3ROWaWjCD49OcrB3GRoVYlLnTCLjSLsLPET0WzTCxOpg1VGnJx-zsiE7RJiUgFtx31Rlf9ubSek",
+    "tokenExpiry": 1767012701158,
+    "deviceId": "boyvue-admin-1767009100795"
+  }
+}

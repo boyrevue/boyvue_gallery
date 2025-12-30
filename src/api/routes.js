@@ -175,23 +175,53 @@ function getDomain(url) {
   }
 }
 
+// Extract language from URL query param or Accept-Language header
+function detectLanguage(req) {
+  // Check URL param first
+  if (req.query?.lang) return req.query.lang.substring(0, 5);
+  // Then Accept-Language header
+  const al = req.headers['accept-language'] || '';
+  const match = al.match(/^([a-z]{2})/i);
+  return match ? match[1].toLowerCase() : 'en';
+}
+
+// Extract region from search engine TLD
+function getSearchRegion(referer) {
+  const regionMap = {
+    'google.de': 'DE', 'google.fr': 'FR', 'google.es': 'ES', 'google.it': 'IT',
+    'google.nl': 'NL', 'google.pl': 'PL', 'google.ru': 'RU', 'google.co.jp': 'JP',
+    'google.co.kr': 'KR', 'google.com.br': 'BR', 'google.com.tr': 'TR',
+    'google.co.th': 'TH', 'google.com.vn': 'VN', 'google.co.id': 'ID',
+    'google.gr': 'GR', 'google.cz': 'CZ', 'google.hu': 'HU', 'google.com.sa': 'SA',
+    'google.com.tw': 'TW', 'google.cn': 'CN', 'google.com': 'US', 'google.co.uk': 'GB',
+    'yandex.ru': 'RU', 'yandex.com': 'RU', 'baidu.com': 'CN', 'm.baidu.com': 'CN',
+    'naver.com': 'KR', 'seznam.cz': 'CZ', 'bing.com': 'US'
+  };
+  for (const [domain, region] of Object.entries(regionMap)) {
+    if (referer.includes(domain)) return region;
+  }
+  return null;
+}
+
 async function trackVisit(req, page, imageId = null) {
   try {
     const { ip, country } = getGeoInfo(req);
     const ua = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || '';
-    
+    const language = detectLanguage(req);
+
     await pool.query(
-      'INSERT INTO analytics (ip, country, city, page, user_agent, referer) VALUES ($1, $2, $3, $4, $5, $6)',
-      [ip, country, '', page, ua.substring(0, 500), referer.substring(0, 500)]
+      'INSERT INTO analytics (ip, country, city, page, user_agent, referer, language) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [ip, country, '', page, ua.substring(0, 500), referer.substring(0, 500), language]
     );
-    
+
     if (referer) {
       const searchInfo = extractSearchQuery(referer);
       if (searchInfo) {
+        const region = getSearchRegion(referer);
         await pool.query(
-          'INSERT INTO search_engine_referrals (engine, search_query, landing_page, ip, country) VALUES ($1, $2, $3, $4, $5)',
-          [searchInfo.engine, searchInfo.query.substring(0, 500), page, ip, country]
+          'INSERT INTO search_engine_referrals (engine, search_query, landing_page, ip, country, language, region) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [searchInfo.engine, searchInfo.query.substring(0, 500), page, ip, country, language, region]
         );
         
         // Learn keywords from search query for this image
@@ -661,6 +691,321 @@ router.post('/seo/analyze', async (req, res) => {
       seoIssues: report.summary.seoIssuesCount
     });
   } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get category metadata with i18n and keywords (public)
+router.get('/category-meta/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug;
+    const lang = req.query.lang || 'en';
+
+    // Find category by slug (catname)
+    const catResult = await pool.query(
+      'SELECT id, catname, description FROM category WHERE LOWER(catname) = LOWER($1)',
+      [slug]
+    );
+
+    if (catResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const category = catResult.rows[0];
+
+    // Get translation for this category
+    const transResult = await pool.query(
+      'SELECT title, description, meta_title, meta_description, meta_keywords FROM category_translations WHERE category_id = $1 AND lang = $2',
+      [category.id, lang]
+    );
+
+    // Get keywords from category_keywords (imported from admin panel)
+    const keywordsResult = await pool.query(`
+      SELECT ck.keyword, ck.search_volume, w.name as source_site
+      FROM category_keywords ck
+      LEFT JOIN seo_websites w ON w.id = ck.source_website_id
+      WHERE ck.category_id = $1
+      ORDER BY ck.search_volume DESC NULLS LAST
+      LIMIT 20
+    `, [category.id]);
+
+    // Combine keywords into comma-separated string
+    const importedKeywords = keywordsResult.rows.map(k => k.keyword).join(', ');
+
+    // Get translation or fallback to English/default
+    let translation = transResult.rows[0];
+    if (!translation && lang !== 'en') {
+      // Try English fallback
+      const enResult = await pool.query(
+        'SELECT title, description, meta_title, meta_description, meta_keywords FROM category_translations WHERE category_id = $1 AND lang = $2',
+        [category.id, 'en']
+      );
+      translation = enResult.rows[0];
+    }
+
+    // Build response with fallbacks
+    const title = translation?.title || category.catname;
+    const description = translation?.description || category.description || '';
+    const metaTitle = translation?.meta_title || `${title} - Free Gay Photos & Videos | BoyVue`;
+    const metaDescription = translation?.meta_description || description || `Browse free ${title} gay photos and videos. HD quality content updated daily.`;
+
+    // Combine stored meta_keywords with imported keywords
+    let allKeywords = [];
+    if (translation?.meta_keywords) {
+      allKeywords.push(translation.meta_keywords);
+    }
+    if (importedKeywords) {
+      allKeywords.push(importedKeywords);
+    }
+    // Add category name as keyword
+    allKeywords.push(category.catname.toLowerCase());
+
+    const metaKeywords = allKeywords.filter(Boolean).join(', ');
+
+    // Translate if needed
+    let finalTitle = title;
+    let finalDescription = metaDescription;
+
+    if (lang !== 'en' && !translation) {
+      finalTitle = await translateText(title, lang);
+      finalDescription = await translateText(metaDescription, lang);
+    }
+
+    res.json({
+      id: category.id,
+      slug: category.catname,
+      title: finalTitle,
+      description: finalDescription,
+      metaTitle: translation?.meta_title || `${finalTitle} - BoyVue`,
+      metaDescription: finalDescription,
+      metaKeywords: metaKeywords,
+      keywords: keywordsResult.rows,
+      lang
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get site review with i18n support and forum links
+router.get('/site-review/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug;
+    const lang = req.query.lang || 'en';
+
+    // Find category by slug
+    const catResult = await pool.query(
+      'SELECT id, catname, photo_count FROM category WHERE LOWER(catname) = LOWER($1)',
+      [slug]
+    );
+
+    if (catResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const category = catResult.rows[0];
+
+    // Get site review
+    const reviewResult = await pool.query(`
+      SELECT sr.*,
+             sw.url as official_url,
+             sw.total_backlinks,
+             sw.total_keywords as keyword_count
+      FROM site_reviews sr
+      LEFT JOIN seo_websites sw ON LOWER(sw.name) = LOWER(sr.site_name)
+      WHERE sr.category_id = $1
+    `, [category.id]);
+
+    if (reviewResult.rows.length === 0) {
+      // Return basic info if no review
+      return res.json({
+        id: category.id,
+        siteName: category.catname,
+        photoCount: category.photo_count,
+        hasReview: false
+      });
+    }
+
+    const review = reviewResult.rows[0];
+
+    // Get translation for this review
+    const transResult = await pool.query(
+      'SELECT title, summary, consensus, pros, cons FROM site_review_translations WHERE review_id = $1 AND lang = $2',
+      [review.id, lang]
+    );
+
+    // Get English fallback if no translation
+    let translation = transResult.rows[0];
+    if (!translation && lang !== 'en') {
+      const enResult = await pool.query(
+        'SELECT title, summary, consensus, pros, cons FROM site_review_translations WHERE review_id = $1 AND lang = $2',
+        [review.id, 'en']
+      );
+      translation = enResult.rows[0];
+    }
+
+    // Get forum links
+    const forumResult = await pool.query(
+      'SELECT forum_name, forum_url, post_title, sentiment FROM site_forum_links WHERE category_id = $1',
+      [category.id]
+    );
+
+    // Get keywords for this category
+    const keywordsResult = await pool.query(`
+      SELECT ck.keyword, ck.search_volume
+      FROM category_keywords ck
+      WHERE ck.category_id = $1
+      ORDER BY ck.search_volume DESC NULLS LAST
+      LIMIT 10
+    `, [category.id]);
+
+    // Get backlinks
+    const backlinksResult = await pool.query(`
+      SELECT swb.source_url, swb.anchor, swb.domain_rank
+      FROM seo_website_backlinks swb
+      JOIN seo_websites sw ON sw.id = swb.website_id
+      WHERE LOWER(sw.name) = LOWER($1)
+      ORDER BY swb.domain_rank DESC NULLS LAST
+      LIMIT 10
+    `, [category.catname]);
+
+    // Build response
+    res.json({
+      id: category.id,
+      siteName: category.catname,
+      siteUrl: review.official_url || review.site_url || '',
+      photoCount: category.photo_count,
+      hasReview: true,
+      // Ratings
+      siteIndex: review.site_index || 0,
+      overallRating: parseFloat(review.overall_rating) || 0,
+      contentQuality: review.content_quality || 0,
+      updateFrequency: review.update_frequency || 0,
+      videoQuality: review.video_quality || 0,
+      modelVariety: review.model_variety || 0,
+      valueRating: review.value_rating || 0,
+      // Content (use translation or fallback)
+      title: translation?.title || `${category.catname} Review`,
+      summary: translation?.summary || review.ai_summary || '',
+      consensus: translation?.consensus || review.ai_consensus || '',
+      pros: translation?.pros || review.pros || [],
+      cons: translation?.cons || review.cons || [],
+      // SEO data
+      keywords: keywordsResult.rows,
+      backlinks: backlinksResult.rows.map(bl => ({
+        source_url: bl.source_url,
+        anchor_text: bl.anchor,
+        domain_authority: bl.domain_rank
+      })),
+      totalBacklinks: parseInt(review.total_backlinks) || 0,
+      totalKeywords: parseInt(review.keyword_count) || 0,
+      // Forum links
+      forumLinks: forumResult.rows,
+      // Meta
+      lastReviewed: review.last_reviewed,
+      lang
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get SERP content for a keyword
+router.get('/serp/:keyword', async (req, res) => {
+  try {
+    const keyword = decodeURIComponent(req.params.keyword);
+    const lang = req.query.lang || 'en';
+
+    const result = await pool.query(`
+      SELECT * FROM seo_serp_content
+      WHERE keyword_term = $1 AND language = $2
+    `, [keyword, lang]);
+
+    if (result.rows.length === 0) {
+      const enResult = await pool.query(`
+        SELECT * FROM seo_serp_content
+        WHERE keyword_term = $1 AND language = 'en'
+      `, [keyword]);
+      if (enResult.rows.length === 0) {
+        return res.status(404).json({ error: 'SERP content not found' });
+      }
+      return res.json(enResult.rows[0]);
+    }
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get all SERPs for a language
+router.get('/serps/:lang', async (req, res) => {
+  try {
+    const lang = req.params.lang || 'en';
+    const limit = parseInt(req.query.limit) || 100;
+
+    const result = await pool.query(`
+      SELECT keyword_term, translated_keyword,
+             serp1_title, serp1_description,
+             serp2_title, serp2_description,
+             serp3_title, serp3_description,
+             target_url, category_id
+      FROM seo_serp_content
+      WHERE language = $1
+      ORDER BY keyword_term
+      LIMIT $2
+    `, [lang, limit]);
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get SERP content for a category
+router.get('/category-serps/:categoryId', async (req, res) => {
+  try {
+    const categoryId = parseInt(req.params.categoryId);
+    const lang = req.query.lang || 'en';
+
+    const result = await pool.query(`
+      SELECT keyword_term, translated_keyword,
+             serp1_title, serp1_description,
+             serp2_title, serp2_description,
+             serp3_title, serp3_description,
+             meta_keywords, content_snippet
+      FROM seo_serp_content
+      WHERE category_id = $1 AND language = $2
+    `, [categoryId, lang]);
+
+    const catResult = await pool.query(
+      'SELECT seo_keywords FROM category WHERE id = $1',
+      [categoryId]
+    );
+
+    res.json({
+      serps: result.rows,
+      categoryKeywords: catResult.rows[0]?.seo_keywords || []
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get random SERPs for homepage
+router.get('/random-serps', async (req, res) => {
+  try {
+    const lang = req.query.lang || 'en';
+    const count = parseInt(req.query.count) || 10;
+
+    const result = await pool.query(`
+      SELECT keyword_term, translated_keyword,
+             serp1_title, serp1_description, target_url
+      FROM seo_serp_content
+      WHERE language = $1
+      ORDER BY RANDOM()
+      LIMIT $2
+    `, [lang, count]);
+    res.json(result.rows);
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });

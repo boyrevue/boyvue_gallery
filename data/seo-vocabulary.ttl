@@ -1,0 +1,239 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix bv: <https://boyvue.com/vocab#> .
+@prefix schema: <https://schema.org/> .
+
+# ============================================
+# BoyVue SEO Vocabulary (SKOS)
+# Multilingual keyword taxonomy for SEO optimization
+# All models are 18+ years of age
+# ============================================
+
+# Concept Scheme
+bv:BoyVueVocabulary a skos:ConceptScheme ;
+    dct:title "BoyVue SEO Vocabulary"@en ;
+    dct:description "Multilingual keyword taxonomy for adult male photography and video content. All depicted individuals are 18+ years of age."@en ;
+    dct:created "2025-12-29"^^xsd:date ;
+    skos:hasTopConcept bv:ContentType, bv:AgeCategory, bv:BodyType, bv:Activity, bv:Ethnicity, bv:Style .
+
+# ============================================
+# TOP LEVEL CONCEPTS
+# ============================================
+
+bv:ContentType a skos:Concept ;
+    skos:prefLabel "Content Type"@en, "Inhaltstyp"@de, "Tipo de contenido"@es, "Type de contenu"@fr, "Тип контента"@ru ;
+    skos:inScheme bv:BoyVueVocabulary ;
+    skos:narrower bv:Photo, bv:Video, bv:Gallery .
+
+bv:AgeCategory a skos:Concept ;
+    skos:prefLabel "Age Category"@en, "Alterskategorie"@de, "Categoría de edad"@es, "Catégorie d'âge"@fr, "Возрастная категория"@ru ;
+    skos:inScheme bv:BoyVueVocabulary ;
+    skos:narrower bv:Young18Plus, bv:Twink, bv:College, bv:YoungAdult .
+
+bv:BodyType a skos:Concept ;
+    skos:prefLabel "Body Type"@en, "Körpertyp"@de, "Tipo de cuerpo"@es, "Type de corps"@fr, "Тип телосложения"@ru ;
+    skos:inScheme bv:BoyVueVocabulary ;
+    skos:narrower bv:Slim, bv:Athletic, bv:Muscular, bv:Average, bv:Smooth .
+
+bv:Activity a skos:Concept ;
+    skos:prefLabel "Activity"@en, "Aktivität"@de, "Actividad"@es, "Activité"@fr, "Активность"@ru ;
+    skos:inScheme bv:BoyVueVocabulary ;
+    skos:narrower bv:Solo, bv:Posing, bv:Outdoor, bv:Studio, bv:Artistic .
+
+bv:Ethnicity a skos:Concept ;
+    skos:prefLabel "Ethnicity"@en, "Ethnizität"@de, "Etnia"@es, "Ethnicité"@fr, "Этническая принадлежность"@ru ;
+    skos:inScheme bv:BoyVueVocabulary ;
+    skos:narrower bv:Asian, bv:European, bv:Latin, bv:African, bv:MiddleEastern .
+
+bv:Style a skos:Concept ;
+    skos:prefLabel "Style"@en, "Stil"@de, "Estilo"@es, "Style"@fr, "Стиль"@ru ;
+    skos:inScheme bv:BoyVueVocabulary ;
+    skos:narrower bv:Artistic, bv:Professional, bv:Amateur, bv:Candid .
+
+# ============================================
+# CONTENT TYPE CONCEPTS
+# ============================================
+
+bv:Photo a skos:Concept ;
+    skos:prefLabel "Photo"@en, "Foto"@de, "Foto"@es, "Photo"@fr, "Фото"@ru, "照片"@zh, "写真"@ja, "사진"@ko, "ภาพถ่าย"@th, "Foto"@pt, "Foto"@it, "Foto"@nl, "Zdjęcie"@pl, "Fotografie"@cs, "صورة"@ar, "Φωτογραφία"@el, "Ảnh"@vi, "Foto"@id, "Fotoğraf"@tr, "Fénykép"@hu ;
+    skos:broader bv:ContentType ;
+    skos:related bv:Gallery ;
+    skos:altLabel "picture"@en, "image"@en, "pic"@en, "Bild"@de, "imagen"@es .
+
+bv:Video a skos:Concept ;
+    skos:prefLabel "Video"@en, "Video"@de, "Vídeo"@es, "Vidéo"@fr, "Видео"@ru, "视频"@zh, "動画"@ja, "비디오"@ko, "วิดีโอ"@th, "Vídeo"@pt, "Video"@it, "Video"@nl, "Wideo"@pl, "Video"@cs, "فيديو"@ar, "Βίντεο"@el, "Video"@vi, "Video"@id, "Video"@tr, "Videó"@hu ;
+    skos:broader bv:ContentType ;
+    skos:altLabel "clip"@en, "movie"@en, "Film"@de, "película"@es .
+
+bv:Gallery a skos:Concept ;
+    skos:prefLabel "Gallery"@en, "Galerie"@de, "Galería"@es, "Galerie"@fr, "Галерея"@ru, "画廊"@zh, "ギャラリー"@ja, "갤러리"@ko, "แกลเลอรี่"@th, "Galeria"@pt, "Galleria"@it, "Galerij"@nl, "Galeria"@pl, "Galerie"@cs, "معرض"@ar, "Γκαλερί"@el, "Thư viện"@vi, "Galeri"@id, "Galeri"@tr, "Galéria"@hu ;
+    skos:broader bv:ContentType ;
+    skos:related bv:Photo .
+
+# ============================================
+# AGE CATEGORY CONCEPTS (All 18+)
+# ============================================
+
+bv:Young18Plus a skos:Concept ;
+    skos:prefLabel "Young Adult 18+"@en, "Junger Erwachsener 18+"@de, "Joven Adulto 18+"@es, "Jeune Adulte 18+"@fr, "Молодой взрослый 18+"@ru ;
+    skos:broader bv:AgeCategory ;
+    skos:definition "Legal adult males aged 18 and above"@en ;
+    skos:altLabel "18 plus"@en, "eighteen plus"@en, "legal age"@en, "adult"@en .
+
+bv:Twink a skos:Concept ;
+    skos:prefLabel "Twink"@en, "Twink"@de, "Twink"@es, "Twink"@fr, "Твинк"@ru, "小鲜肉"@zh, "ツインク"@ja, "트윙크"@ko ;
+    skos:broader bv:AgeCategory ;
+    skos:definition "Slender young adult male 18+ with youthful appearance"@en ;
+    skos:altLabel "slim boy"@en, "young man"@en, "junger Mann"@de, "joven"@es .
+
+bv:College a skos:Concept ;
+    skos:prefLabel "College"@en, "Student"@de, "Universitario"@es, "Étudiant"@fr, "Студент"@ru ;
+    skos:broader bv:AgeCategory ;
+    skos:definition "College-aged young adult male 18-24"@en ;
+    skos:altLabel "university"@en, "student"@en, "frat"@en .
+
+bv:YoungAdult a skos:Concept ;
+    skos:prefLabel "Young Adult"@en, "Junger Erwachsener"@de, "Adulto Joven"@es, "Jeune Adulte"@fr, "Молодой взрослый"@ru ;
+    skos:broader bv:AgeCategory ;
+    skos:definition "Young adult male typically 18-25"@en .
+
+# ============================================
+# BODY TYPE CONCEPTS
+# ============================================
+
+bv:Slim a skos:Concept ;
+    skos:prefLabel "Slim"@en, "Schlank"@de, "Delgado"@es, "Mince"@fr, "Стройный"@ru, "苗条"@zh, "スリム"@ja, "날씬한"@ko ;
+    skos:broader bv:BodyType ;
+    skos:altLabel "thin"@en, "slender"@en, "skinny"@en, "dünn"@de, "flaco"@es .
+
+bv:Athletic a skos:Concept ;
+    skos:prefLabel "Athletic"@en, "Athletisch"@de, "Atlético"@es, "Athlétique"@fr, "Атлетичный"@ru, "运动型"@zh, "アスレチック"@ja, "운동선수"@ko ;
+    skos:broader bv:BodyType ;
+    skos:altLabel "fit"@en, "toned"@en, "sporty"@en, "sportlich"@de, "deportivo"@es .
+
+bv:Muscular a skos:Concept ;
+    skos:prefLabel "Muscular"@en, "Muskulös"@de, "Musculoso"@es, "Musclé"@fr, "Мускулистый"@ru, "肌肉"@zh, "筋肉質"@ja, "근육질"@ko ;
+    skos:broader bv:BodyType ;
+    skos:altLabel "buff"@en, "ripped"@en, "built"@en .
+
+bv:Average a skos:Concept ;
+    skos:prefLabel "Average"@en, "Durchschnittlich"@de, "Promedio"@es, "Moyen"@fr, "Средний"@ru ;
+    skos:broader bv:BodyType ;
+    skos:altLabel "normal"@en, "regular"@en .
+
+bv:Smooth a skos:Concept ;
+    skos:prefLabel "Smooth"@en, "Glatt"@de, "Suave"@es, "Lisse"@fr, "Гладкий"@ru ;
+    skos:broader bv:BodyType ;
+    skos:altLabel "hairless"@en, "clean"@en .
+
+# ============================================
+# ETHNICITY CONCEPTS
+# ============================================
+
+bv:Asian a skos:Concept ;
+    skos:prefLabel "Asian"@en, "Asiatisch"@de, "Asiático"@es, "Asiatique"@fr, "Азиат"@ru, "亚洲"@zh, "アジア人"@ja, "아시아"@ko, "เอเชีย"@th ;
+    skos:broader bv:Ethnicity ;
+    skos:altLabel "oriental"@en, "Japanese"@en, "Korean"@en, "Chinese"@en, "Thai"@en, "Vietnamese"@en .
+
+bv:European a skos:Concept ;
+    skos:prefLabel "European"@en, "Europäisch"@de, "Europeo"@es, "Européen"@fr, "Европеец"@ru ;
+    skos:broader bv:Ethnicity ;
+    skos:altLabel "Caucasian"@en, "white"@en, "Czech"@en, "Russian"@en, "German"@en .
+
+bv:Latin a skos:Concept ;
+    skos:prefLabel "Latin"@en, "Lateinamerikanisch"@de, "Latino"@es, "Latin"@fr, "Латиноамериканец"@ru ;
+    skos:broader bv:Ethnicity ;
+    skos:altLabel "Latino"@en, "Hispanic"@en, "Brazilian"@en, "Mexican"@en .
+
+bv:African a skos:Concept ;
+    skos:prefLabel "African"@en, "Afrikanisch"@de, "Africano"@es, "Africain"@fr, "Африканец"@ru ;
+    skos:broader bv:Ethnicity ;
+    skos:altLabel "Black"@en, "Ebony"@en .
+
+bv:MiddleEastern a skos:Concept ;
+    skos:prefLabel "Middle Eastern"@en, "Nahöstlich"@de, "Del Medio Oriente"@es, "Moyen-Oriental"@fr, "Ближневосточный"@ru, "الشرق الأوسط"@ar ;
+    skos:broader bv:Ethnicity ;
+    skos:altLabel "Arab"@en, "Turkish"@en, "Persian"@en .
+
+# ============================================
+# ACTIVITY CONCEPTS
+# ============================================
+
+bv:Solo a skos:Concept ;
+    skos:prefLabel "Solo"@en, "Solo"@de, "Solo"@es, "Solo"@fr, "Соло"@ru ;
+    skos:broader bv:Activity ;
+    skos:altLabel "alone"@en, "single"@en .
+
+bv:Posing a skos:Concept ;
+    skos:prefLabel "Posing"@en, "Posieren"@de, "Posando"@es, "Pose"@fr, "Позирование"@ru ;
+    skos:broader bv:Activity .
+
+bv:Outdoor a skos:Concept ;
+    skos:prefLabel "Outdoor"@en, "Draußen"@de, "Al aire libre"@es, "Extérieur"@fr, "На улице"@ru ;
+    skos:broader bv:Activity ;
+    skos:altLabel "outside"@en, "nature"@en, "beach"@en, "forest"@en .
+
+bv:Studio a skos:Concept ;
+    skos:prefLabel "Studio"@en, "Studio"@de, "Estudio"@es, "Studio"@fr, "Студия"@ru ;
+    skos:broader bv:Activity ;
+    skos:altLabel "professional"@en, "indoor"@en .
+
+# ============================================
+# STYLE CONCEPTS
+# ============================================
+
+bv:Artistic a skos:Concept ;
+    skos:prefLabel "Artistic"@en, "Künstlerisch"@de, "Artístico"@es, "Artistique"@fr, "Художественный"@ru ;
+    skos:broader bv:Style ;
+    skos:altLabel "art"@en, "artistic nude"@en, "fine art"@en .
+
+bv:Professional a skos:Concept ;
+    skos:prefLabel "Professional"@en, "Professionell"@de, "Profesional"@es, "Professionnel"@fr, "Профессиональный"@ru ;
+    skos:broader bv:Style ;
+    skos:altLabel "pro"@en, "high quality"@en, "HD"@en .
+
+bv:Amateur a skos:Concept ;
+    skos:prefLabel "Amateur"@en, "Amateur"@de, "Amateur"@es, "Amateur"@fr, "Любительский"@ru ;
+    skos:broader bv:Style ;
+    skos:altLabel "homemade"@en, "real"@en, "authentic"@en .
+
+bv:Candid a skos:Concept ;
+    skos:prefLabel "Candid"@en, "Ungestellt"@de, "Cándido"@es, "Candide"@fr, "Естественный"@ru ;
+    skos:broader bv:Style ;
+    skos:altLabel "natural"@en, "spontaneous"@en .
+
+# ============================================
+# CORE SEO KEYWORD CONCEPTS
+# ============================================
+
+bv:CoreKeywords a skos:Collection ;
+    skos:prefLabel "Core SEO Keywords"@en ;
+    skos:member bv:KW_NudeTeenBoys18Plus, bv:KW_YoungMenNude, bv:KW_TwinkPhotos, bv:KW_GayPhotos, bv:KW_MaleNude .
+
+bv:KW_NudeTeenBoys18Plus a skos:Concept ;
+    skos:prefLabel "nude teen boys 18+"@en ;
+    skos:altLabel "nude legal teen boys"@en, "18+ teen boys nude"@en, "legal teen boys naked"@en ;
+    skos:definition "Adult male content featuring legal 18+ individuals"@en ;
+    skos:note "All models verified 18+ years of age"@en ;
+    skos:inScheme bv:BoyVueVocabulary .
+
+bv:KW_YoungMenNude a skos:Concept ;
+    skos:prefLabel "young men nude"@en, "junge Männer nackt"@de, "jóvenes desnudos"@es, "jeunes hommes nus"@fr, "молодые мужчины голые"@ru ;
+    skos:altLabel "naked young men"@en, "nude young males"@en ;
+    skos:inScheme bv:BoyVueVocabulary .
+
+bv:KW_TwinkPhotos a skos:Concept ;
+    skos:prefLabel "twink photos"@en, "Twink Fotos"@de, "fotos twink"@es, "photos twink"@fr, "твинк фото"@ru ;
+    skos:altLabel "twink pictures"@en, "twink gallery"@en, "twink pics"@en ;
+    skos:inScheme bv:BoyVueVocabulary .
+
+bv:KW_GayPhotos a skos:Concept ;
+    skos:prefLabel "gay photos"@en, "schwule Fotos"@de, "fotos gay"@es, "photos gay"@fr, "гей фото"@ru ;
+    skos:altLabel "gay pictures"@en, "gay gallery"@en, "gay pics"@en ;
+    skos:inScheme bv:BoyVueVocabulary .
+
+bv:KW_MaleNude a skos:Concept ;
+    skos:prefLabel "male nude"@en, "männlicher Akt"@de, "desnudo masculino"@es, "nu masculin"@fr, "мужская обнаженка"@ru ;
+    skos:altLabel "nude male"@en, "naked man"@en, "nude boy"@en ;
+    skos:inScheme bv:BoyVueVocabulary .

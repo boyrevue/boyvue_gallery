@@ -187,6 +187,56 @@ const i18nTemplates = {
     highQuality: 'محتوى عالي الجودة',
     regularUpdates: 'تحديثات منتظمة',
     exclusive: 'محتوى حصري'
+  },
+  cs: {
+    browse: 'Procházet',
+    photosVideos: 'fotek a videí',
+    freeGallery: 'Zdarma galerie s HD streamováním',
+    collection: 'kolekce',
+    watchNow: 'Sledovat nyní',
+    highQuality: 'Vysoce kvalitní obsah',
+    regularUpdates: 'Pravidelné aktualizace',
+    exclusive: 'Exkluzivní obsah'
+  },
+  el: {
+    browse: 'Περιήγηση',
+    photosVideos: 'φωτογραφίες και βίντεο',
+    freeGallery: 'Δωρεάν γκαλερί με HD streaming',
+    collection: 'συλλογή',
+    watchNow: 'Παρακολουθήστε τώρα',
+    highQuality: 'Υψηλής ποιότητας περιεχόμενο',
+    regularUpdates: 'Τακτικές ενημερώσεις',
+    exclusive: 'Αποκλειστικό περιεχόμενο'
+  },
+  hu: {
+    browse: 'Böngészés',
+    photosVideos: 'fotók és videók',
+    freeGallery: 'Ingyenes galéria HD streameléssel',
+    collection: 'gyűjtemény',
+    watchNow: 'Nézd most',
+    highQuality: 'Magas minőségű tartalom',
+    regularUpdates: 'Rendszeres frissítések',
+    exclusive: 'Exkluzív tartalom'
+  },
+  id: {
+    browse: 'Jelajahi',
+    photosVideos: 'foto dan video',
+    freeGallery: 'Galeri gratis dengan streaming HD',
+    collection: 'koleksi',
+    watchNow: 'Tonton sekarang',
+    highQuality: 'Konten berkualitas tinggi',
+    regularUpdates: 'Pembaruan rutin',
+    exclusive: 'Konten eksklusif'
+  },
+  vi: {
+    browse: 'Duyệt',
+    photosVideos: 'ảnh và video',
+    freeGallery: 'Thư viện miễn phí với HD streaming',
+    collection: 'bộ sưu tập',
+    watchNow: 'Xem ngay',
+    highQuality: 'Nội dung chất lượng cao',
+    regularUpdates: 'Cập nhật thường xuyên',
+    exclusive: 'Nội dung độc quyền'
   }
 };
 
@@ -231,7 +281,12 @@ const keywordSuffixes = {
   ko: ['갤러리', '사진', '동영상', '무료', 'HD'],
   th: ['แกลเลอรี', 'รูปภาพ', 'วิดีโอ', 'ฟรี', 'HD'],
   tr: ['galeri', 'fotoğraflar', 'videolar', 'ücretsiz', 'HD'],
-  ar: ['معرض', 'صور', 'فيديو', 'مجاني', 'HD']
+  ar: ['معرض', 'صور', 'فيديو', 'مجاني', 'HD'],
+  cs: ['galerie', 'fotky', 'videa', 'zdarma', 'HD'],
+  el: ['γκαλερί', 'φωτογραφίες', 'βίντεο', 'δωρεάν', 'HD'],
+  hu: ['galéria', 'fotók', 'videók', 'ingyenes', 'HD'],
+  id: ['galeri', 'foto', 'video', 'gratis', 'HD'],
+  vi: ['thư viện', 'ảnh', 'video', 'miễn phí', 'HD']
 };
 
 // Generate SEO for a category in a specific language

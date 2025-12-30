@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { translations, getLang, setLang, fetchTranslations, fetchLanguages, getTranslationsSync } from './i18n.js';
+import { useAuth } from './hooks/useAuth.js';
+import LoginModal from './components/LoginModal.jsx';
+import HotOrNot from './pages/HotOrNot.jsx';
 
 const API = '/api';
 const VIDEO_EXTS = ['.mp4', '.webm', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
@@ -275,6 +278,10 @@ function App() {
   const [showCompliance, setShowCompliance] = useState(false);
   const [translationData, setTranslationData] = useState(null);
   const [languages, setLanguages] = useState(null);
+  const [showHotOrNot, setShowHotOrNot] = useState(false);
+  
+  // Auth hook for login/logout
+  const auth = useAuth();
 
   // Fetch translations from DB on mount and when language changes
   useEffect(() => {
@@ -425,6 +432,18 @@ function App() {
   return (
     <div style={{ fontFamily: 'Arial', background: '#111', color: '#fff', minHeight: '100vh', direction: dir }}>
       {showStatsModal && <StatsModal analytics={analytics} onClose={() => setShowStatsModal(false)} />}
+      {auth.showLoginModal && <LoginModal 
+        onClose={auth.closeLogin}
+        onLoginGoogle={auth.loginWithGoogle}
+        onLoginReddit={auth.loginWithReddit}
+        onLoginTwitter={auth.loginWithTwitter}
+        onLoginEmail={auth.loginWithEmail}
+      />}
+      {showHotOrNot && <HotOrNot 
+        user={auth.user}
+        onClose={() => setShowHotOrNot(false)}
+        onLoginRequired={auth.openLogin}
+      />}
       <header style={{ background: '#222', padding: '20px', borderBottom: '2px solid #f60' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <div>
@@ -439,6 +458,17 @@ function App() {
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <form onSubmit={doSearch} style={{ display: 'flex', gap: '10px' }}><input type="text" placeholder={ui.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ padding: '10px 15px', background: '#333', border: '1px solid #444', borderRadius: '4px', color: '#fff', width: '180px' }} /><button type="submit" style={{ padding: '10px 20px', background: '#f60', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{ui.search}</button></form>
             <LanguageSelector lang={lang} onChange={changeLang} />
+            <button onClick={() => setShowHotOrNot(true)} style={{ padding: '8px 16px', background: 'linear-gradient(145deg, #f60, #c50)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>🔥 Hot or Not</button>
+            {auth.isAuthenticated ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {auth.user.avatarUrl && <img src={auth.user.avatarUrl} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />}
+                <span style={{ color: '#888', fontSize: '14px' }}>{auth.user.displayName}</span>
+                <button onClick={auth.logout} style={{ padding: '6px 12px', background: '#333', color: '#888', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Logout</button>
+              </div>
+            ) : (
+              <button onClick={auth.openLogin} style={{ padding: '8px 16px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}>Sign In</button>
+            )}
+            <a href="https://admin.boyvue.com/seo-dashboard" rel="nofollow noopener" target="_blank" style={{ color: '#666', fontSize: '12px', textDecoration: 'none', padding: '8px 12px', background: '#222', borderRadius: '4px' }}>Admin</a>
           </div>
         </div>
       </header>

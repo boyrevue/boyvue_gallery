@@ -1,0 +1,26 @@
+{
+  "description": "Sample OnlyFans performer data for import",
+  "notes": "Replace with actual performer data from OnlyFans affiliate program or manual curation",
+  "performers": [
+    {
+      "username": "example_performer",
+      "display_name": "Example Performer",
+      "bio": "Sample bio text for the performer profile",
+      "avatar_url": "https://example.com/avatar.jpg",
+      "cover_photo_url": "https://example.com/cover.jpg",
+      "gender": "male",
+      "categories": ["fitness", "lifestyle"],
+      "location": "Los Angeles, CA",
+      "followers": 10000,
+      "subscribers": 500,
+      "media_count": 200,
+      "video_count": 50,
+      "photo_count": 150,
+      "subscription_price": 9.99,
+      "free_trial_days": 7,
+      "is_verified": true,
+      "twitter": "https://twitter.com/example",
+      "instagram": "https://instagram.com/example"
+    }
+  ]
+}

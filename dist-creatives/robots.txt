@@ -1,0 +1,21 @@
+# robots.txt for fans.boyvue.com
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /go/
+
+# Allow search engines to index performer pages
+Allow: /performers/
+Allow: /themes/
+Allow: /platforms/
+Allow: /live
+
+# Sitemaps
+Sitemap: https://fans.boyvue.com/sitemap.xml
+Sitemap: https://fans.boyvue.com/sitemap-performers.xml
+Sitemap: https://fans.boyvue.com/sitemap-themes.xml
+
+# Crawl-delay for aggressive bots
+Crawl-delay: 1

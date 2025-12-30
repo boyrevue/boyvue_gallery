@@ -1,19 +1,115 @@
-# Robots.txt for BoyVue.com
+# Robots.txt for BoyVue.com - Adult Content Site
+# Adult content labeling: RTA-5042-1996-1400-1577-RTA
+
+# Google (allow adult content indexing)
 User-agent: Googlebot
 Allow: /
 Disallow: /api/
 Disallow: /media/video-thumbs/
+Disallow: /seo-dashboard
 
+# Google Image Bot (important for adult image search)
+User-agent: Googlebot-Image
+Allow: /media/
+Allow: /
+
+# Google Video Bot (important for adult video search)
+User-agent: Googlebot-Video
+Allow: /media/
+Allow: /
+
+# Bing
 User-agent: Bingbot
 Allow: /
 Disallow: /api/
 Disallow: /media/video-thumbs/
+Disallow: /seo-dashboard
 
-# Block all other bots
+# Bing Image/Media Bots
+User-agent: msnbot-media
+Allow: /media/
+Allow: /
+
+# Yandex (Russia - supports adult content)
+User-agent: Yandex
+Allow: /
+Disallow: /api/
+Disallow: /seo-dashboard
+
+# Yandex Images
+User-agent: YandexImages
+Allow: /media/
+Allow: /
+
+# Yandex Video
+User-agent: YandexVideo
+Allow: /media/
+Allow: /
+
+# Baidu (China)
+User-agent: Baiduspider
+Allow: /
+Disallow: /api/
+Disallow: /seo-dashboard
+
+# Sogou (China)
+User-agent: Sogou
+Allow: /
+Disallow: /api/
+
+# 360 Search (China)
+User-agent: 360Spider
+Allow: /
+Disallow: /api/
+
+# Naver (Korea)
+User-agent: Yeti
+Allow: /
+Disallow: /api/
+
+# Seznam (Czech)
+User-agent: SeznamBot
+Allow: /
+Disallow: /api/
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /api/
+
+# Brave Search
+User-agent: BraveBot
+Allow: /
+Disallow: /api/
+
+# IndexNow Key Location
+# IndexNow key file: /boyvue-indexnow-key-2024.txt
+
+# Block AI/ML training bots
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+# Block all other unknown bots
 User-agent: *
 Disallow: /
 
 # Sitemaps
 Sitemap: https://boyvue.com/sitemap.xml
+Sitemap: https://boyvue.com/sitemap-i18n.xml
 Sitemap: https://boyvue.com/sitemap-video.xml
+Sitemap: https://boyvue.com/sitemap-image.xml
 Sitemap: https://boyvue.com/sitemap-category-photos.xml
+Sitemap: https://boyvue.com/sitemap-categories.xml
+
+# Crawl-delay for polite crawling
+User-agent: *
+Crawl-delay: 1

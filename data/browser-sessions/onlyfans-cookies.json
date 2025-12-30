@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Path",
+    "value": "/",
+    "domain": "bug2.onlyfans.com",
+    "path": "/api/3/envelope",
+    "expires": -1,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "_cfuvid",
+    "value": "WWnfMHWAMTUmLlGeLD8Jyt6p8UR9hbz3zCqhu1JPalg-1767028455232-0.0.1.1-604800000",
+    "domain": ".onlyfans.com",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "lang",
+    "value": "en",
+    "domain": ".onlyfans.com",
+    "path": "/",
+    "expires": 1801590803.622186,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "sess",
+    "value": "s59oe633u89f1lfjp423ncvinf",
+    "domain": "onlyfans.com",
+    "path": "/",
+    "expires": 1767894800.607279,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "csrf",
+    "value": "CF2TJeQta1e5328fcede153b39150c14102afc70",
+    "domain": "onlyfans.com",
+    "path": "/",
+    "expires": 1801590803.684714,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "__cf_bm",
+    "value": "z2cypiAhvTrn68dD0HtbjqoxibRffoWNScNOovpHY3o-1767030803-1.0.1.1-ZCgq0DOManYD_7azrx.Axsr5p1fBuq963WmQ4GKBd3JsDG5gn79k2b2O3KzFrj6wVbs5IJLqgQ0Uy.J4rN6MQOWoRy1ZOFIfuk872l7l0sM",
+    "domain": ".onlyfans.com",
+    "path": "/",
+    "expires": 1767032600.217681,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "fp",
+    "value": "9d844db272469c3f88d8dc5bdc6053f15087b74b",
+    "domain": ".onlyfans.com",
+    "path": "/",
+    "expires": 1798566803,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  }
+]
