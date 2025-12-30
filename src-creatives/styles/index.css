@@ -537,3 +537,37 @@ a:hover { text-decoration: underline; }
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-20px); }
 }
+
+/* Nav Tab Styling */
+.nav-link {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.nav-link.active {
+  background: #333;
+  border-color: #555;
+}
+
+.nav-link.faves-link {
+  border: 1px dashed #f60;
+  background: rgba(255,102,0,0.1);
+}
+
+.nav-link.faves-link:hover {
+  background: rgba(255,102,0,0.2);
+  border-style: solid;
+}
+
+.nav-link.faves-link.active {
+  background: #f60;
+  border-color: #f60;
+  color: #fff;
+}
