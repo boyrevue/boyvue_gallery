@@ -17,7 +17,6 @@ function Layout() {
     { to: '/', label: t('nav.home') },
     { to: '/live', label: t('nav.liveNow') },
     { to: '/performers', label: t('nav.fans') },
-    { to: '/themes', label: t('nav.themes') },
     { to: '/my-faves', label: '❤️ ' + t('nav.favourites'), className: 'faves-link' },
   ];
 
