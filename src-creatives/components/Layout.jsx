@@ -18,7 +18,7 @@ function Layout() {
     { to: '/live', label: t('nav.liveNow') },
     { to: '/performers', label: t('nav.fans') },
     { to: '/themes', label: t('nav.themes') },
-    { to: '/my-faves', label: '❤️ ' + t('nav.myFaves'), className: 'faves-link' },
+    { to: '/my-faves', label: '❤️ ' + t('nav.favourites'), className: 'faves-link' },
   ];
 
   const changeLang = (code) => {

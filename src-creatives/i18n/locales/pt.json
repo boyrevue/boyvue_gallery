@@ -4,7 +4,7 @@
     "liveNow": "Ao Vivo",
     "fans": "Fãs",
     "themes": "Temas",
-    "myFaves": "Meus Favoritos",
+    "favourites": "Favoritos",
     "signIn": "Entrar",
     "logout": "Sair",
     "admin": "Admin"
@@ -21,7 +21,7 @@
     "dragToFave": "Arraste modelos aqui para favoritar"
   },
   "faves": {
-    "title": "Meus Favoritos",
+    "title": "Favoritos",
     "hot": "Hot",
     "notHot": "Não",
     "total": "Total Avaliado",
@@ -76,7 +76,7 @@
     "homeDesc": "Descubra os modelos cam gay mais quentes.",
     "performersTitle": "Modelos Gay",
     "performersDesc": "Nossa seleção de modelos gay.",
-    "favesTitle": "Meus Favoritos",
+    "favesTitle": "Favoritos",
     "favesDesc": "Sua coleção pessoal."
   }
 }

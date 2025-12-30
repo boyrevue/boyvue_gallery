@@ -4,7 +4,7 @@
     "liveNow": "Live",
     "fans": "Fans",
     "themes": "Themen",
-    "myFaves": "Meine Favoriten",
+    "favourites": "Favoriten",
     "signIn": "Anmelden",
     "logout": "Abmelden",
     "admin": "Admin"
@@ -21,7 +21,7 @@
     "dragToFave": "Ziehe Darsteller hierher um sie zu favorisieren"
   },
   "faves": {
-    "title": "Meine Favoriten",
+    "title": "Favoriten",
     "hot": "Hot",
     "notHot": "Nicht",
     "total": "Gesamt bewertet",
@@ -76,7 +76,7 @@
     "homeDesc": "Entdecke die heißesten Gay Cam Models.",
     "performersTitle": "Gay Darsteller",
     "performersDesc": "Unsere Auswahl an Gay Darstellern.",
-    "favesTitle": "Meine Favoriten",
+    "favesTitle": "Favoriten",
     "favesDesc": "Deine persönliche Sammlung."
   }
 }

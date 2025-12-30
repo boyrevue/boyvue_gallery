@@ -4,7 +4,7 @@
     "liveNow": "En Vivo",
     "fans": "Fans",
     "themes": "Temas",
-    "myFaves": "Mis Favoritos",
+    "favourites": "Favoritos",
     "signIn": "Iniciar Sesión",
     "logout": "Salir",
     "admin": "Admin"
@@ -21,7 +21,7 @@
     "dragToFave": "Arrastra modelos aquí para agregar a favoritos"
   },
   "faves": {
-    "title": "Mis Favoritos",
+    "title": "Favoritos",
     "hot": "Hot",
     "notHot": "No",
     "total": "Total Calificados",
