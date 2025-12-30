@@ -13,7 +13,7 @@ const AI_SUGGESTIONS = [
 ];
 
 const SUGGESTED_THEMES = ['Couples', 'Black', 'Asian', 'Latino', 'Skinny', 'Faves', 'BDSM'];
-const REFRESH_OPTIONS = [5, 10, 15, 30, 60];
+const REFRESH_OPTIONS = [20, 30, 45, 60];
 
 function HotOrNotPage() {
   const { auth } = useOutletContext();
@@ -33,7 +33,7 @@ function HotOrNotPage() {
   const [imageKey, setImageKey] = useState(Date.now());
   const [refreshRate, setRefreshRate] = useState(() => {
     const saved = localStorage.getItem('thumbRefreshRate');
-    return saved ? parseInt(saved) : 10;
+    return saved ? parseInt(saved) : 20;
   });
   const [showSettings, setShowSettings] = useState(false);
   const [recentlyUsedThemes, setRecentlyUsedThemes] = useState([]);
