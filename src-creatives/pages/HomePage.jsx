@@ -3,17 +3,14 @@ import { Link, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PerformerCard from '../components/PerformerCard';
 
-const API = '/api';
-
 function HomePage() {
   const { t } = useTranslation();
   const { auth } = useOutletContext();
   const [sections, setSections] = useState([]);
   const [stats, setStats] = useState({});
   const [userThemeCount, setUserThemeCount] = useState(0);
+  const [favesCount, setFavesCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [dragOver, setDragOver] = useState(false);
-  const [recentFaves, setRecentFaves] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -21,7 +18,7 @@ function HomePage() {
 
   useEffect(() => {
     if (auth?.isAuthenticated) {
-      fetchUserThemes();
+      fetchUserData();
     }
   }, [auth?.isAuthenticated]);
 
@@ -47,55 +44,20 @@ function HomePage() {
     }
   }
 
-  async function fetchUserThemes() {
+  async function fetchUserData() {
     try {
-      const res = await fetch(`${API}/favorites/themes`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        setUserThemeCount(data.customThemes?.length || 0);
-      }
+      const [themesRes, favesRes] = await Promise.all([
+        fetch('/api/favorites/themes', { credentials: 'include' }),
+        fetch('/api/favorites?all=true', { credentials: 'include' })
+      ]);
+      
+      const themesData = await themesRes.json();
+      const favesData = await favesRes.json();
+      
+      if (themesData.success) setUserThemeCount(themesData.customThemes?.length || 0);
+      if (favesData.success) setFavesCount(favesData.favorites?.length || 0);
     } catch (err) {}
   }
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setDragOver(false);
-  };
-
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    
-    if (!auth?.isAuthenticated) {
-      auth.openLogin();
-      return;
-    }
-
-    const performerId = e.dataTransfer.getData('performerId');
-    const performerData = e.dataTransfer.getData('performerData');
-    
-    if (performerId) {
-      try {
-        const res = await fetch(`${API}/favorites/${performerId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ isHot: true })
-        });
-        
-        if (res.ok && performerData) {
-          const performer = JSON.parse(performerData);
-          setRecentFaves(prev => [performer, ...prev.slice(0, 4)]);
-        }
-      } catch (err) {
-        console.error('Error adding favorite:', err);
-      }
-    }
-  };
 
   if (loading) {
     return <div className="loading">{t('performers.loading')}</div>;
@@ -103,26 +65,6 @@ function HomePage() {
 
   return (
     <div className="home-page">
-      {/* Favorites Drop Zone */}
-      <div 
-        className={`faves-drop-zone ${dragOver ? 'drag-over' : ''} ${recentFaves.length > 0 ? 'has-faves' : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="drop-zone-content">
-          <span className="drop-icon">❤️</span>
-          <span className="drop-text">{t('home.dragToFave')}</span>
-        </div>
-        {recentFaves.length > 0 && (
-          <div className="recent-faves">
-            {recentFaves.map(p => (
-              <img key={p.id} src={p.avatar_url} alt={p.display_name} className="recent-fave-thumb" />
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Hero Section */}
       <section className="hero">
         <div className="container">
@@ -138,7 +80,7 @@ function HomePage() {
               <span className="stat-label">{t('home.themes')}</span>
             </div>
             <div className="stat">
-              <span className="stat-value">{recentFaves.length}</span>
+              <span className="stat-value">{auth?.isAuthenticated ? favesCount : 0}</span>
               <span className="stat-label">Favourites</span>
             </div>
           </div>
@@ -146,10 +88,12 @@ function HomePage() {
             <Link to="/live" className="btn btn-primary btn-lg">{t('home.watchLive')}</Link>
             <Link to="/performers" className="btn btn-secondary btn-lg">{t('home.browseAll')}</Link>
           </div>
+          
+          <p className="drag-tip">💡 Drag performers to the ❤️ Favourites tab to save them</p>
         </div>
       </section>
 
-      {/* Dynamic Sections (without themes) */}
+      {/* Dynamic Sections */}
       {sections.map(section => (
         <section key={section.id} className={`section section-${section.section_type}`}>
           <div className="container">
