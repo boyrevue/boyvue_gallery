@@ -16,7 +16,9 @@ function FavouritesPage() {
   const [newThemeName, setNewThemeName] = useState('');
   const [newThemeIcon, setNewThemeIcon] = useState('🏷️');
   const [dragOverTheme, setDragOverTheme] = useState(null);
-  const [activeTheme, setActiveTheme] = useState(null);
+  const [activeTheme, setActiveTheme] = useState('untagged');
+  const [onlineFilter, setOnlineFilter] = useState('all'); // 'all', 'online', 'offline'
+  const [editingThemeId, setEditingThemeId] = useState(null);
 
   useEffect(() => {
     if (auth?.isAuthenticated) {
@@ -69,6 +71,26 @@ function FavouritesPage() {
     }
   };
 
+  const updateThemeIcon = async (themeId, newIcon) => {
+    try {
+      const res = await fetch(`${API}/favorites/themes/${themeId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ icon: newIcon })
+      });
+
+      if (res.ok) {
+        setThemes(prev => prev.map(t =>
+          t.id === themeId ? { ...t, icon: newIcon } : t
+        ));
+      }
+    } catch (err) {
+      console.error('Error updating theme:', err);
+    }
+    setEditingThemeId(null);
+  };
+
   const handleDragStart = (e, favorite) => {
     e.dataTransfer.setData('favoriteId', favorite.id.toString());
     e.dataTransfer.setData('performerId', favorite.performer_id.toString());
@@ -86,31 +108,44 @@ function FavouritesPage() {
   const handleDrop = async (e, themeId) => {
     e.preventDefault();
     setDragOverTheme(null);
-    
+
     const performerId = e.dataTransfer.getData('performerId');
     if (!performerId) return;
-    
+
+    // Find the favorite being moved to get old theme
+    const favorite = favorites.find(f => f.performer_id.toString() === performerId);
+    const oldThemeId = favorite?.user_theme_id;
+
+    // Don't do anything if dropping on same theme
+    if (oldThemeId === themeId) return;
+
     try {
-      await fetch(`${API}/favorites/${performerId}/custom-theme`, {
+      const res = await fetch(`${API}/favorites/${performerId}/custom-theme`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ userThemeId: themeId })
       });
-      
-      // Update local state
-      setFavorites(prev => prev.map(f => 
-        f.performer_id.toString() === performerId 
+
+      if (!res.ok) return;
+
+      // Update local state - performer moves to new theme
+      setFavorites(prev => prev.map(f =>
+        f.performer_id.toString() === performerId
           ? { ...f, user_theme_id: themeId }
           : f
       ));
-      
-      // Update theme count
-      setThemes(prev => prev.map(th => 
-        th.id === themeId 
-          ? { ...th, count: (parseInt(th.count) || 0) + 1 }
-          : th
-      ));
+
+      // Update theme counts (decrement old, increment new)
+      setThemes(prev => prev.map(th => {
+        if (th.id === themeId) {
+          return { ...th, count: (parseInt(th.count) || 0) + 1 };
+        }
+        if (th.id === oldThemeId) {
+          return { ...th, count: Math.max(0, (parseInt(th.count) || 0) - 1) };
+        }
+        return th;
+      }));
     } catch (err) {
       console.error('Error assigning theme:', err);
     }
@@ -122,6 +157,36 @@ function FavouritesPage() {
 
   const getUntaggedFavorites = () => {
     return favorites.filter(f => !f.user_theme_id);
+  };
+
+  const applyOnlineFilter = (list) => {
+    if (onlineFilter === 'online') return list.filter(f => f.is_online);
+    if (onlineFilter === 'offline') return list.filter(f => !f.is_online);
+    return list;
+  };
+
+  const getFilteredFavorites = () => {
+    let list = activeTheme === 'untagged'
+      ? getUntaggedFavorites()
+      : getThemeFavorites(activeTheme);
+    return applyOnlineFilter(list);
+  };
+
+  const handleDeleteFavorite = async (e, performerId) => {
+    e.stopPropagation(); // Prevent drag
+    if (!confirm('Remove from favourites?')) return;
+
+    try {
+      const res = await fetch(`${API}/favorites/${performerId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setFavorites(prev => prev.filter(f => f.performer_id !== performerId));
+      }
+    } catch (err) {
+      console.error('Error deleting favorite:', err);
+    }
   };
 
   if (!auth?.isAuthenticated) {
@@ -149,8 +214,30 @@ function FavouritesPage() {
     <div className="faves-page">
       <div className="container">
         <div className="faves-header">
-          <h1>❤️ {t('nav.favourites')}</h1>
-          <p>{favorites.length} performers saved</p>
+          <div className="faves-title">
+            <h1>❤️ {t('nav.favourites')}</h1>
+            <p>{favorites.length} performers saved</p>
+          </div>
+          <div className="online-filter">
+            <button
+              className={`filter-btn ${onlineFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setOnlineFilter('all')}
+            >
+              All
+            </button>
+            <button
+              className={`filter-btn ${onlineFilter === 'online' ? 'active' : ''}`}
+              onClick={() => setOnlineFilter('online')}
+            >
+              🟢 Online
+            </button>
+            <button
+              className={`filter-btn ${onlineFilter === 'offline' ? 'active' : ''}`}
+              onClick={() => setOnlineFilter('offline')}
+            >
+              ⚫ Offline
+            </button>
+          </div>
         </div>
 
         {/* Themes Sidebar */}
@@ -193,15 +280,6 @@ function FavouritesPage() {
 
             <div className="themes-list">
               <button
-                className={`theme-item ${activeTheme === null ? 'active' : ''}`}
-                onClick={() => setActiveTheme(null)}
-              >
-                <span className="theme-icon">📋</span>
-                <span className="theme-name">All Favourites</span>
-                <span className="theme-count">{favorites.length}</span>
-              </button>
-
-              <button
                 className={`theme-item ${activeTheme === 'untagged' ? 'active' : ''} ${dragOverTheme === 'untagged' ? 'drag-over' : ''}`}
                 onClick={() => setActiveTheme('untagged')}
               >
@@ -211,7 +289,7 @@ function FavouritesPage() {
               </button>
 
               {themes.map(theme => (
-                <button
+                <div
                   key={theme.id}
                   className={`theme-item ${activeTheme === theme.id ? 'active' : ''} ${dragOverTheme === theme.id ? 'drag-over' : ''}`}
                   onClick={() => setActiveTheme(theme.id)}
@@ -219,10 +297,31 @@ function FavouritesPage() {
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, theme.id)}
                 >
-                  <span className="theme-icon">{theme.icon}</span>
+                  {editingThemeId === theme.id ? (
+                    <div className="icon-picker-inline" onClick={e => e.stopPropagation()}>
+                      {THEME_ICONS.map(icon => (
+                        <button
+                          key={icon}
+                          type="button"
+                          className="icon-btn-sm"
+                          onClick={() => updateThemeIcon(theme.id, icon)}
+                        >
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span
+                      className="theme-icon editable"
+                      onClick={(e) => { e.stopPropagation(); setEditingThemeId(theme.id); }}
+                      title="Click to change icon"
+                    >
+                      {theme.icon}
+                    </span>
+                  )}
                   <span className="theme-name">{theme.name}</span>
                   <span className="theme-count">{theme.count || 0}</span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -237,24 +336,25 @@ function FavouritesPage() {
               </div>
             ) : (
               <div className="faves-grid">
-                {(activeTheme === null 
-                  ? favorites 
-                  : activeTheme === 'untagged'
-                    ? getUntaggedFavorites()
-                    : getThemeFavorites(activeTheme)
-                ).map(fav => (
+                {getFilteredFavorites().map(fav => (
                   <div
                     key={fav.id}
                     className="fave-card"
                     draggable
                     onDragStart={(e) => handleDragStart(e, fav)}
                   >
+                    <button
+                      className="delete-fav-btn"
+                      onClick={(e) => handleDeleteFavorite(e, fav.performer_id)}
+                      title="Remove from favourites"
+                    >
+                      ✕
+                    </button>
                     <img src={fav.avatar_url} alt={fav.display_name} />
                     <div className="fave-info">
                       <h4>{fav.display_name}</h4>
-                      {fav.is_online && <span className="live-badge">LIVE</span>}
                     </div>
-                    <span className="drag-hint">Drag to theme</span>
+                    <span className="drag-hint">Drag to theme · ✕ to remove</span>
                   </div>
                 ))}
               </div>

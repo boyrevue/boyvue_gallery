@@ -128,7 +128,7 @@ router.get('/', requireAuth, async (req, res) => {
   
   try {
     let query = `
-      SELECT p.id, p.username, p.display_name, p.avatar_url, p.is_online, p.follower_count, uf.is_hot, uf.theme_id, uf.user_theme_id, uf.created_at as favorited_at,
+      SELECT uf.id, uf.performer_id, p.username, p.display_name, p.avatar_url, p.is_online, p.follower_count, uf.is_hot, uf.theme_id, uf.user_theme_id, uf.created_at as favorited_at,
              t.name as theme_name, t.slug as theme_slug,
              ut.name as custom_theme_name, ut.icon as custom_theme_icon,
              pl.name as platform_name, pl.slug as platform_slug
@@ -229,20 +229,26 @@ router.post('/:performerId/theme', requireAuth, async (req, res) => {
 router.post('/:performerId/custom-theme', requireAuth, async (req, res) => {
   const { performerId } = req.params;
   const { userThemeId } = req.body;
-  
+
+  console.log('=== Custom theme assignment ===');
+  console.log('userId:', req.userId, 'performerId:', performerId, 'userThemeId:', userThemeId);
+
   try {
     // Verify theme belongs to user
     const theme = await pool.query('SELECT id FROM user_themes WHERE id = $1 AND user_id = $2', [userThemeId, req.userId]);
     if (!theme.rows.length) {
       return res.status(404).json({ error: 'Custom theme not found' });
     }
-    
-    await pool.query(`
-      UPDATE user_favorites SET user_theme_id = $3, theme_id = NULL, created_at = NOW()
-      WHERE user_id = $1 AND performer_id = $2 AND is_hot = true
+
+    const result = await pool.query(`
+      UPDATE user_favorites SET user_theme_id = $3, theme_id = NULL
+      WHERE user_id = $1 AND performer_id = $2
+      RETURNING *
     `, [req.userId, performerId, userThemeId]);
+    console.log('Update result:', result.rowCount, 'rows updated');
     res.json({ success: true, userThemeId });
   } catch (err) {
+    console.error('Error updating theme:', err);
     res.status(500).json({ error: 'Failed to classify' });
   }
 });
