@@ -32,7 +32,33 @@ router.get('/icons', (req, res) => {
 });
 
 // Get all themes (system + user's custom)
-router.get('/themes', requireAuth, async (req, res) => {  try {    // System themes    const systemThemes = await pool.query('SELECT id, name, slug, icon, NULL as user_id, false as is_custom FROM themes ORDER BY name');        // User's custom themes with performer count    const userThemes = await pool.query(`      SELECT ut.id, ut.name, NULL as slug, ut.icon, ut.user_id, true as is_custom, ut.color,             COUNT(uf.id) as count      FROM user_themes ut      LEFT JOIN user_favorites uf ON uf.user_theme_id = ut.id      WHERE ut.user_id = $1      GROUP BY ut.id      ORDER BY ut.name    `, [req.userId]);        res.json({       success: true,       themes: systemThemes.rows,      customThemes: userThemes.rows,      icons: THEME_ICONS    });  } catch (err) {    res.status(500).json({ error: 'Failed to get themes' });  }});
+// Get all themes (system + user's custom)
+router.get('/themes', requireAuth, async (req, res) => {
+  try {
+    // System themes
+    const systemThemes = await pool.query('SELECT id, name, slug, icon, NULL as user_id, false as is_custom FROM themes ORDER BY name');
+    
+    // User's custom themes with performer count
+    const userThemes = await pool.query(`
+      SELECT ut.id, ut.name, NULL as slug, ut.icon, ut.user_id, true as is_custom, ut.color,
+             COUNT(uf.id) as count
+      FROM user_themes ut
+      LEFT JOIN user_favorites uf ON uf.user_theme_id = ut.id
+      WHERE ut.user_id = $1
+      GROUP BY ut.id
+      ORDER BY ut.name
+    `, [req.userId]);
+    
+    res.json({ 
+      success: true, 
+      themes: systemThemes.rows,
+      customThemes: userThemes.rows,
+      icons: THEME_ICONS
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get themes' });
+  }
+});
 
 // Create custom theme
 router.post('/themes', requireAuth, async (req, res) => {
