@@ -330,7 +330,7 @@ function HotOrNotPage() {
           </div>
           
           <div className="performer-mini">
-            <img src={getRefreshableUrl(pendingPerformer.avatar_url)} alt="" />
+            <img key={imageKey} src={getRefreshableUrl(pendingPerformer.avatar_url)} alt="" />
             <div className="refresh-countdown">{countdown}s</div>
           </div>
 
@@ -394,7 +394,7 @@ function HotOrNotPage() {
               onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}
               onTouchStart={handleDragStart} onTouchMove={handleDragMove} onTouchEnd={handleDragEnd}
             >
-              <img src={getRefreshableUrl(currentPerformer.avatar_url)} alt={currentPerformer.display_name} draggable={false} />
+              <img key={imageKey} src={getRefreshableUrl(currentPerformer.avatar_url)} alt={currentPerformer.display_name} draggable={false} />
               <div className="refresh-indicator">{countdown}s ↻</div>
               <div className="hon-card-info">
                 <h3>{currentPerformer.display_name}</h3>
