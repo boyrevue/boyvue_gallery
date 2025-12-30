@@ -67,7 +67,10 @@ function PerformersPage() {
     } else {
       params.delete(key);
     }
-    params.set('page', '1');
+    // Only reset page when changing other filters, not page itself
+    if (key !== 'page') {
+      params.set('page', '1');
+    }
     setSearchParams(params);
   }
 
