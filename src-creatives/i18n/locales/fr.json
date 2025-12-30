@@ -1,0 +1,82 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "liveNow": "En Direct",
+    "fans": "Fans",
+    "themes": "Thèmes",
+    "myFaves": "Mes Favoris",
+    "signIn": "Connexion",
+    "logout": "Déconnexion",
+    "admin": "Admin"
+  },
+  "home": {
+    "title": "Créateurs Gay Premium",
+    "subtitle": "Découvrez {{count}}+ modèles de {{platforms}} plateformes",
+    "liveNow": "En Direct",
+    "themes": "Thèmes",
+    "galleries": "Galeries",
+    "watchLive": "Regarder en Direct",
+    "browseAll": "Voir Tout",
+    "viewAll": "Voir Tout",
+    "dragToFave": "Glissez ici pour ajouter aux favoris"
+  },
+  "faves": {
+    "title": "Mes Favoris",
+    "hot": "Hot",
+    "notHot": "Non",
+    "total": "Total Évalué",
+    "skip": "Passer",
+    "nextPerformer": "Modèle suivant",
+    "undo": "Annuler",
+    "refresh": "Taux de rafraîchissement",
+    "classifyTheme": "Quel thème correspond?",
+    "typeTheme": "Tapez un thème...",
+    "suggestedThemes": "Thèmes suggérés",
+    "yourThemes": "Vos thèmes",
+    "allCaughtUp": "Tout à jour!",
+    "noMorePerformers": "Plus de modèles",
+    "signInRequired": "Connectez-vous pour sauvegarder",
+    "followers": "abonnés"
+  },
+  "performers": {
+    "title": "Tous les Modèles",
+    "filters": "Filtres",
+    "platform": "Plateforme",
+    "allPlatforms": "Toutes",
+    "sortBy": "Trier par",
+    "popular": "Populaire",
+    "newest": "Récent",
+    "mostFollowers": "Plus d abonnés",
+    "onlineOnly": "En ligne",
+    "search": "Rechercher...",
+    "page": "Page",
+    "of": "sur",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "loading": "Chargement...",
+    "live": "DIRECT"
+  },
+  "footer": {
+    "ageNotice": "Tous les modèles ont 18+. Label RTA.",
+    "copyright": "Agrégateur de contenu affilié"
+  },
+  "login": {
+    "title": "Connexion",
+    "continueWith": "Continuer avec",
+    "orEmail": "Ou par email",
+    "email": "Email",
+    "password": "Mot de passe",
+    "signIn": "Connexion",
+    "register": "Inscription",
+    "noAccount": "Pas de compte?",
+    "hasAccount": "Déjà inscrit?"
+  },
+  "seo": {
+    "homeTitle": "Modèles Cam Gay Premium",
+    "homeDesc": "Découvrez les modèles cam gay.",
+    "performersTitle": "Modèles Gay",
+    "performersDesc": "Notre sélection de modèles gay.",
+    "favesTitle": "Mes Favoris",
+    "favesDesc": "Votre collection personnelle."
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "nav": {
+    "home": "Início",
+    "liveNow": "Ao Vivo",
+    "fans": "Fãs",
+    "themes": "Temas",
+    "myFaves": "Meus Favoritos",
+    "signIn": "Entrar",
+    "logout": "Sair",
+    "admin": "Admin"
+  },
+  "home": {
+    "title": "Criadores Gay Premium",
+    "subtitle": "Descubra {{count}}+ modelos de {{platforms}} plataformas",
+    "liveNow": "Ao Vivo",
+    "themes": "Temas",
+    "galleries": "Galerias",
+    "watchLive": "Assistir Ao Vivo",
+    "browseAll": "Ver Todos",
+    "viewAll": "Ver Todos",
+    "dragToFave": "Arraste modelos aqui para favoritar"
+  },
+  "faves": {
+    "title": "Meus Favoritos",
+    "hot": "Hot",
+    "notHot": "Não",
+    "total": "Total Avaliado",
+    "skip": "Pular",
+    "nextPerformer": "Próximo modelo",
+    "undo": "Desfazer",
+    "refresh": "Taxa de atualização",
+    "classifyTheme": "Qual tema combina?",
+    "typeTheme": "Digite um tema...",
+    "suggestedThemes": "Temas sugeridos",
+    "yourThemes": "Seus temas",
+    "allCaughtUp": "Tudo em dia!",
+    "noMorePerformers": "Sem mais modelos",
+    "signInRequired": "Entre para salvar",
+    "followers": "seguidores"
+  },
+  "performers": {
+    "title": "Todos os Modelos",
+    "filters": "Filtros",
+    "platform": "Plataforma",
+    "allPlatforms": "Todas",
+    "sortBy": "Ordenar",
+    "popular": "Popular",
+    "newest": "Recente",
+    "mostFollowers": "Mais Seguidores",
+    "onlineOnly": "Online",
+    "search": "Buscar...",
+    "page": "Página",
+    "of": "de",
+    "previous": "Anterior",
+    "next": "Próximo",
+    "loading": "Carregando...",
+    "live": "AO VIVO"
+  },
+  "footer": {
+    "ageNotice": "Todos os modelos 18+. Rotulado RTA.",
+    "copyright": "Agregador de conteúdo afiliado"
+  },
+  "login": {
+    "title": "Entrar",
+    "continueWith": "Continuar com",
+    "orEmail": "Ou por email",
+    "email": "Email",
+    "password": "Senha",
+    "signIn": "Entrar",
+    "register": "Registrar",
+    "noAccount": "Sem conta?",
+    "hasAccount": "Já tem conta?"
+  },
+  "seo": {
+    "homeTitle": "Modelos Cam Gay Premium",
+    "homeDesc": "Descubra os modelos cam gay mais quentes.",
+    "performersTitle": "Modelos Gay",
+    "performersDesc": "Nossa seleção de modelos gay.",
+    "favesTitle": "Meus Favoritos",
+    "favesDesc": "Sua coleção pessoal."
+  }
+}

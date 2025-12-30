@@ -35,6 +35,8 @@
     "express-session": "^1.18.2",
     "geoip-lite": "^1.4.10",
     "helmet": "^7.1.0",
+    "i18next": "^25.7.3",
+    "i18next-browser-languagedetector": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
     "mysql2": "^3.16.0",
@@ -44,6 +46,7 @@
     "passport-twitter": "^1.0.4",
     "pg": "^8.11.3",
     "playwright": "^1.57.0",
+    "react-i18next": "^16.5.0",
     "sharp": "^0.33.2",
     "translate-google-api": "^1.0.4",
     "uuid": "^9.0.1"

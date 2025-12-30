@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import PerformerCard from '../components/PerformerCard';
-import ThemeCard from '../components/ThemeCard';
+
+const API = '/api';
 
 function HomePage() {
+  const { t } = useTranslation();
+  const { auth } = useOutletContext();
   const [sections, setSections] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [dragOver, setDragOver] = useState(false);
+  const [recentFaves, setRecentFaves] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -22,7 +28,11 @@ function HomePage() {
       const sectionsData = await sectionsRes.json();
       const statsData = await statsRes.json();
 
-      if (sectionsData.success) setSections(sectionsData.sections);
+      if (sectionsData.success) {
+        // Filter out browse-themes section (moved to Themes tab)
+        const filtered = sectionsData.sections.filter(s => s.slug !== 'browse-themes');
+        setSections(filtered);
+      }
       if (statsData.success) setStats(statsData.stats);
     } catch (err) {
       console.error('Error fetching homepage data:', err);
@@ -31,39 +41,99 @@ function HomePage() {
     }
   }
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    
+    if (!auth?.isAuthenticated) {
+      auth.openLogin();
+      return;
+    }
+
+    const performerId = e.dataTransfer.getData('performerId');
+    const performerData = e.dataTransfer.getData('performerData');
+    
+    if (performerId) {
+      try {
+        const res = await fetch(`${API}/favorites/${performerId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ isHot: true })
+        });
+        
+        if (res.ok && performerData) {
+          const performer = JSON.parse(performerData);
+          setRecentFaves(prev => [performer, ...prev.slice(0, 4)]);
+        }
+      } catch (err) {
+        console.error('Error adding favorite:', err);
+      }
+    }
+  };
+
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return <div className="loading">{t('performers.loading')}</div>;
   }
 
   return (
     <div className="home-page">
+      {/* Favorites Drop Zone */}
+      <div 
+        className={`faves-drop-zone ${dragOver ? 'drag-over' : ''} ${recentFaves.length > 0 ? 'has-faves' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="drop-zone-content">
+          <span className="drop-icon">❤️</span>
+          <span className="drop-text">{t('home.dragToFave')}</span>
+        </div>
+        {recentFaves.length > 0 && (
+          <div className="recent-faves">
+            {recentFaves.map(p => (
+              <img key={p.id} src={p.avatar_url} alt={p.display_name} className="recent-fave-thumb" />
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Hero Section */}
       <section className="hero">
         <div className="container">
-          <h1>Premium Gay Creatives</h1>
-          <p>Discover {stats.total_performers || 0}+ hand-picked performers from {stats.platforms || 0} platforms</p>
+          <h1>{t('home.title')}</h1>
+          <p>{t('home.subtitle', { count: stats.total_performers || 0, platforms: stats.platforms || 0 })}</p>
           <div className="hero-stats">
             <div className="stat">
               <span className="stat-value">{stats.online_now || 0}</span>
-              <span className="stat-label">Live Now</span>
+              <span className="stat-label">{t('home.liveNow')}</span>
             </div>
             <div className="stat">
               <span className="stat-value">{stats.themes || 0}</span>
-              <span className="stat-label">Themes</span>
+              <span className="stat-label">{t('home.themes')}</span>
             </div>
             <div className="stat">
               <span className="stat-value">{stats.galleries || 0}</span>
-              <span className="stat-label">Galleries</span>
+              <span className="stat-label">{t('home.galleries')}</span>
             </div>
           </div>
           <div className="hero-actions">
-            <Link to="/live" className="btn btn-primary btn-lg">Watch Live</Link>
-            <Link to="/performers" className="btn btn-secondary btn-lg">Browse All</Link>
+            <Link to="/live" className="btn btn-primary btn-lg">{t('home.watchLive')}</Link>
+            <Link to="/performers" className="btn btn-secondary btn-lg">{t('home.browseAll')}</Link>
           </div>
         </div>
       </section>
 
-      {/* Dynamic Sections */}
+      {/* Dynamic Sections (without themes) */}
       {sections.map(section => (
         <section key={section.id} className={`section section-${section.section_type}`}>
           <div className="container">
@@ -72,26 +142,15 @@ function HomePage() {
                 <h2>{section.title}</h2>
                 {section.subtitle && <p className="section-subtitle">{section.subtitle}</p>}
               </div>
-              {section.slug !== 'browse-themes' && (
-                <Link to={section.slug === 'live-now' ? '/live' : '/performers'} className="btn btn-outline">
-                  View All
-                </Link>
-              )}
+              <Link to={section.slug === 'live-now' ? '/live' : '/performers'} className="btn btn-outline">
+                {t('home.viewAll')}
+              </Link>
             </div>
-
-            {section.slug === 'browse-themes' ? (
-              <div className="themes-grid">
-                {section.items.map(theme => (
-                  <ThemeCard key={theme.id} theme={theme} />
-                ))}
-              </div>
-            ) : (
-              <div className="performers-grid">
-                {section.items.map(performer => (
-                  <PerformerCard key={performer.id} performer={performer} />
-                ))}
-              </div>
-            )}
+            <div className="performers-grid">
+              {section.items.map(performer => (
+                <PerformerCard key={performer.id} performer={performer} draggable />
+              ))}
+            </div>
           </div>
         </section>
       ))}

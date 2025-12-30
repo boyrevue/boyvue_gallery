@@ -1,37 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ThemeCard from '../components/ThemeCard';
 
 function ThemesPage() {
+  const { t } = useTranslation();
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchThemes();
+    fetch('/api/creatives/themes')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setThemes(data.themes);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  async function fetchThemes() {
-    try {
-      const res = await fetch('/api/creatives/themes');
-      const data = await res.json();
-      if (data.success) setThemes(data.themes);
-    } catch (err) {
-      console.error('Error fetching themes:', err);
-    } finally {
-      setLoading(false);
-    }
+  if (loading) {
+    return <div className="loading">{t('performers.loading')}</div>;
   }
-
-  if (loading) return <div className="loading">Loading themes...</div>;
 
   return (
     <div className="themes-page">
       <div className="container">
         <div className="page-header">
-          <h1>Browse by Theme</h1>
-          <p>Explore our curated collections of performers</p>
+          <h1>{t('nav.themes')}</h1>
+          <p className="page-subtitle">Explore our curated collections</p>
         </div>
 
-        <div className="themes-grid themes-grid-large">
+        <div className="themes-grid">
           {themes.map(theme => (
             <ThemeCard key={theme.id} theme={theme} />
           ))}

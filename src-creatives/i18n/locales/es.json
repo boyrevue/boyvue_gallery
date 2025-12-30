@@ -1,0 +1,82 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "liveNow": "En Vivo",
+    "fans": "Fans",
+    "themes": "Temas",
+    "myFaves": "Mis Favoritos",
+    "signIn": "Iniciar Sesión",
+    "logout": "Salir",
+    "admin": "Admin"
+  },
+  "home": {
+    "title": "Creadores Gay Premium",
+    "subtitle": "Descubre {{count}}+ modelos seleccionados de {{platforms}} plataformas",
+    "liveNow": "En Vivo",
+    "themes": "Temas",
+    "galleries": "Galerías",
+    "watchLive": "Ver en Vivo",
+    "browseAll": "Ver Todo",
+    "viewAll": "Ver Todo",
+    "dragToFave": "Arrastra modelos aquí para agregar a favoritos"
+  },
+  "faves": {
+    "title": "Mis Favoritos",
+    "hot": "Hot",
+    "notHot": "No",
+    "total": "Total Calificados",
+    "skip": "Saltar",
+    "nextPerformer": "Siguiente modelo",
+    "undo": "Deshacer",
+    "refresh": "Tasa de actualización",
+    "classifyTheme": "¿Qué tema le queda a este modelo?",
+    "typeTheme": "Escribe un tema o selecciona...",
+    "suggestedThemes": "Temas sugeridos",
+    "yourThemes": "Tus temas",
+    "allCaughtUp": "¡Todo al día!",
+    "noMorePerformers": "No hay más modelos para calificar",
+    "signInRequired": "Inicia sesión para guardar favoritos",
+    "followers": "seguidores"
+  },
+  "performers": {
+    "title": "Todos los Modelos",
+    "filters": "Filtros",
+    "platform": "Plataforma",
+    "allPlatforms": "Todas las Plataformas",
+    "sortBy": "Ordenar por",
+    "popular": "Popular",
+    "newest": "Más Nuevo",
+    "mostFollowers": "Más Seguidores",
+    "onlineOnly": "Solo en línea",
+    "search": "Buscar modelos...",
+    "page": "Página",
+    "of": "de",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "loading": "Cargando...",
+    "live": "EN VIVO"
+  },
+  "footer": {
+    "ageNotice": "Todos los modelos mayores de 18 años. Etiquetado RTA.",
+    "copyright": "Agregador de contenido de afiliados"
+  },
+  "login": {
+    "title": "Iniciar Sesión",
+    "continueWith": "Continuar con",
+    "orEmail": "O inicia sesión con email",
+    "email": "Email",
+    "password": "Contraseña",
+    "signIn": "Iniciar Sesión",
+    "register": "Registrarse",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?"
+  },
+  "seo": {
+    "homeTitle": "Modelos Cam Gay Premium y Creadores de Contenido",
+    "homeDesc": "Descubre los modelos cam gay más calientes. Transmisiones en vivo y contenido exclusivo.",
+    "performersTitle": "Modelos y Artistas Gay",
+    "performersDesc": "Explora nuestra selección de modelos gay de las mejores plataformas.",
+    "favesTitle": "Mis Modelos Favoritos",
+    "favesDesc": "Tu colección personal de modelos gay favoritos."
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "nav": {
+    "home": "Home",
+    "liveNow": "Live Now",
+    "fans": "Fans",
+    "themes": "Themes",
+    "myFaves": "My Faves",
+    "signIn": "Sign In",
+    "logout": "Logout",
+    "admin": "Admin"
+  },
+  "home": {
+    "title": "Premium Gay Creatives",
+    "subtitle": "Discover {{count}}+ hand-picked performers from {{platforms}} platforms",
+    "liveNow": "Live Now",
+    "themes": "Themes",
+    "galleries": "Galleries",
+    "watchLive": "Watch Live",
+    "browseAll": "Browse All",
+    "viewAll": "View All",
+    "dragToFave": "Drag performers here to add to favorites"
+  },
+  "faves": {
+    "title": "My Favorites",
+    "hot": "Hot",
+    "notHot": "Not",
+    "total": "Total Rated",
+    "skip": "Skip",
+    "nextPerformer": "Next performer",
+    "undo": "Undo",
+    "refresh": "Thumbnail refresh rate",
+    "classifyTheme": "What theme fits this performer?",
+    "typeTheme": "Type a theme or select below...",
+    "suggestedThemes": "Suggested themes",
+    "yourThemes": "Your themes",
+    "allCaughtUp": "All caught up!",
+    "noMorePerformers": "No more performers to rate",
+    "signInRequired": "Sign in to save your favorites",
+    "followers": "followers"
+  },
+  "performers": {
+    "title": "All Performers",
+    "filters": "Filters",
+    "platform": "Platform",
+    "allPlatforms": "All Platforms",
+    "sortBy": "Sort by",
+    "popular": "Popular",
+    "newest": "Newest",
+    "mostFollowers": "Most Followers",
+    "onlineOnly": "Online only",
+    "search": "Search performers...",
+    "page": "Page",
+    "of": "of",
+    "previous": "Previous",
+    "next": "Next",
+    "loading": "Loading...",
+    "live": "LIVE"
+  },
+  "footer": {
+    "ageNotice": "All models 18+ at time of depiction. RTA Labeled.",
+    "copyright": "Affiliate powered content aggregator"
+  },
+  "login": {
+    "title": "Sign In",
+    "continueWith": "Continue with",
+    "orEmail": "Or sign in with email",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign In",
+    "register": "Register",
+    "noAccount": "Do not have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "seo": {
+    "homeTitle": "Premium Gay Cam Models & Content Creators",
+    "homeDesc": "Discover the hottest gay cam models and content creators. Live streams, exclusive content, and more.",
+    "performersTitle": "Gay Performers & Models",
+    "performersDesc": "Browse our curated selection of gay performers and models from top platforms.",
+    "favesTitle": "My Favorite Performers",
+    "favesDesc": "Your personal collection of favorite gay performers and models."
+  }
+}

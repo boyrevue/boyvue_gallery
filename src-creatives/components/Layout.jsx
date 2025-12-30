@@ -1,20 +1,30 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import LoginModal from './LoginModal';
+import { languages } from '../i18n';
 
 function Layout() {
   const location = useLocation();
   const auth = useAuth();
-  const [showHotOrNot, setShowHotOrNot] = useState(false);
+  const { t, i18n } = useTranslation();
+  const [showLangMenu, setShowLangMenu] = useState(false);
+
+  const currentLang = languages.find(l => l.code === i18n.language) || languages[0];
 
   const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/live', label: 'Live Now' },
-    { to: '/performers', label: 'Fans' },
-    { to: '/themes', label: 'Themes' },
-    { to: '/hot-or-not', label: '🔥 Hot or Not', className: 'hot-link' },
+    { to: '/', label: t('nav.home') },
+    { to: '/live', label: t('nav.liveNow') },
+    { to: '/performers', label: t('nav.fans') },
+    { to: '/themes', label: t('nav.themes') },
+    { to: '/my-faves', label: '❤️ ' + t('nav.myFaves'), className: 'faves-link' },
   ];
+
+  const changeLang = (code) => {
+    i18n.changeLanguage(code);
+    setShowLangMenu(false);
+  };
 
   return (
     <div className="app">
@@ -48,18 +58,41 @@ function Layout() {
           </nav>
 
           <div className="header-actions">
+            {/* Language Selector */}
+            <div className="lang-selector">
+              <button 
+                className="lang-btn" 
+                onClick={() => setShowLangMenu(!showLangMenu)}
+              >
+                {currentLang.flag} {currentLang.code.toUpperCase()}
+              </button>
+              {showLangMenu && (
+                <div className="lang-menu">
+                  {languages.map(lang => (
+                    <button
+                      key={lang.code}
+                      className={`lang-option ${i18n.language === lang.code ? 'active' : ''}`}
+                      onClick={() => changeLang(lang.code)}
+                    >
+                      {lang.flag} {lang.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {auth.isAuthenticated ? (
               <div className="user-menu">
                 {auth.user.avatarUrl && (
                   <img src={auth.user.avatarUrl} alt="" className="user-avatar" />
                 )}
                 <span className="user-name">{auth.user.displayName}</span>
-                <button onClick={auth.logout} className="btn btn-logout">Logout</button>
+                <button onClick={auth.logout} className="btn btn-logout">{t('nav.logout')}</button>
               </div>
             ) : (
-              <button onClick={auth.openLogin} className="btn btn-signin">Sign In</button>
+              <button onClick={auth.openLogin} className="btn btn-signin">{t('nav.signIn')}</button>
             )}
-            <Link to="/admin" className="btn btn-admin">Admin</Link>
+            <Link to="/admin" className="btn btn-admin">{t('nav.admin')}</Link>
           </div>
         </div>
       </header>
@@ -70,8 +103,8 @@ function Layout() {
 
       <footer className="footer">
         <div className="container">
-          <p>All models 18+ at time of depiction. RTA Labeled.</p>
-          <p>&copy; {new Date().getFullYear()} fans.boyvue.com - Affiliate powered content aggregator</p>
+          <p>{t('footer.ageNotice')}</p>
+          <p>&copy; {new Date().getFullYear()} fans.boyvue.com - {t('footer.copyright')}</p>
         </div>
       </footer>
     </div>

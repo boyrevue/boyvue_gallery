@@ -24,7 +24,7 @@ function App() {
           <Route path="themes/:slug" element={<ThemePage />} />
           <Route path="live" element={<LiveNowPage />} />
           <Route path="platforms/:slug" element={<PlatformPage />} />
-          <Route path="hot-or-not" element={<HotOrNotPage />} />
+          <Route path="my-faves" element={<HotOrNotPage />} />
         </Route>
 
         {/* Admin Routes */}
