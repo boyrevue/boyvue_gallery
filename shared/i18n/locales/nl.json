@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Home",
+    "signIn": "Inloggen",
+    "logout": "Uitloggen",
+    "loading": "Laden...",
+    "search": "Zoeken...",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "page": "Pagina",
+    "of": "van",
+    "viewAll": "Bekijk Alles",
+    "back": "Terug"
+  },
+  "compliance": {
+    "ageNotice": "Alle modellen zijn 18+ op het moment van afbeelding.",
+    "rtaLabeled": "RTA gelabeld.",
+    "fullNotice": "Alle modellen zijn 18+ op het moment van afbeelding. RTA gelabeld.",
+    "copyright": "Alle rechten voorbehouden.",
+    "affiliateDisclosure": "Deze site bevat affiliate links. We kunnen commissies verdienen.",
+    "usCompliance": "18 U.S.C. 2257 Nalevingsverklaring",
+    "gdprNotice": "We gebruiken cookies. Door verder te gaan, ga je akkoord met ons cookiebeleid.",
+    "privacyPolicy": "Privacybeleid",
+    "termsOfService": "Servicevoorwaarden",
+    "cookiePolicy": "Cookiebeleid",
+    "dmcaNotice": "DMCA",
+    "contactUs": "Contact"
+  },
+  "network": {
+    "pics": "Foto's",
+    "videos": "Video's",
+    "adult": "Volwassenen",
+    "fans": "Fans",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Pagina niet gevonden",
+    "serverError": "Er ging iets mis",
+    "tryAgain": "Probeer opnieuw"
+  }
+}

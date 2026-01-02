@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Trang chủ",
+    "signIn": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "loading": "Đang tải...",
+    "search": "Tìm kiếm...",
+    "previous": "Trước",
+    "next": "Tiếp",
+    "page": "Trang",
+    "of": "/",
+    "viewAll": "Xem tất cả",
+    "back": "Quay lại"
+  },
+  "compliance": {
+    "ageNotice": "Tất cả người mẫu đều từ 18 tuổi trở lên tại thời điểm quay phim.",
+    "rtaLabeled": "Đã gắn nhãn RTA.",
+    "fullNotice": "Tất cả người mẫu đều từ 18 tuổi trở lên tại thời điểm quay phim. Đã gắn nhãn RTA.",
+    "copyright": "Đã đăng ký bản quyền.",
+    "affiliateDisclosure": "Trang web này chứa liên kết liên kết. Chúng tôi có thể nhận hoa hồng.",
+    "usCompliance": "Tuyên bố tuân thủ 18 U.S.C. 2257",
+    "gdprNotice": "Chúng tôi sử dụng cookie. Tiếp tục đồng nghĩa với việc bạn đồng ý với chính sách cookie.",
+    "privacyPolicy": "Chính sách bảo mật",
+    "termsOfService": "Điều khoản dịch vụ",
+    "cookiePolicy": "Chính sách Cookie",
+    "dmcaNotice": "DMCA",
+    "contactUs": "Liên hệ"
+  },
+  "network": {
+    "pics": "Hình ảnh",
+    "videos": "Video",
+    "adult": "Người lớn",
+    "fans": "Fan",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Không tìm thấy trang",
+    "serverError": "Đã xảy ra lỗi",
+    "tryAgain": "Thử lại"
+  }
+}

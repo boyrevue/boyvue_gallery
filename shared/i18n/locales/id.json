@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Beranda",
+    "signIn": "Masuk",
+    "logout": "Keluar",
+    "loading": "Memuat...",
+    "search": "Cari...",
+    "previous": "Sebelumnya",
+    "next": "Selanjutnya",
+    "page": "Halaman",
+    "of": "dari",
+    "viewAll": "Lihat Semua",
+    "back": "Kembali"
+  },
+  "compliance": {
+    "ageNotice": "Semua model berusia 18+ saat pengambilan gambar.",
+    "rtaLabeled": "Berlabel RTA.",
+    "fullNotice": "Semua model berusia 18+ saat pengambilan gambar. Berlabel RTA.",
+    "copyright": "Hak cipta dilindungi.",
+    "affiliateDisclosure": "Situs ini berisi tautan afiliasi. Kami mungkin menerima komisi.",
+    "usCompliance": "Pernyataan Kepatuhan 18 U.S.C. 2257",
+    "gdprNotice": "Kami menggunakan cookie. Dengan melanjutkan, Anda menyetujui penggunaan cookie kami.",
+    "privacyPolicy": "Kebijakan Privasi",
+    "termsOfService": "Ketentuan Layanan",
+    "cookiePolicy": "Kebijakan Cookie",
+    "dmcaNotice": "DMCA",
+    "contactUs": "Hubungi Kami"
+  },
+  "network": {
+    "pics": "Gambar",
+    "videos": "Video",
+    "adult": "Dewasa",
+    "fans": "Penggemar",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Halaman tidak ditemukan",
+    "serverError": "Terjadi kesalahan",
+    "tryAgain": "Coba lagi"
+  }
+}

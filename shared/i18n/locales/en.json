@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Home",
+    "signIn": "Sign In",
+    "logout": "Logout",
+    "loading": "Loading...",
+    "search": "Search...",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "of": "of",
+    "viewAll": "View All",
+    "back": "Back"
+  },
+  "compliance": {
+    "ageNotice": "All models 18+ at time of depiction.",
+    "rtaLabeled": "RTA Labeled.",
+    "fullNotice": "All models 18+ at time of depiction. RTA Labeled.",
+    "copyright": "All rights reserved.",
+    "affiliateDisclosure": "This site contains affiliate links. We may earn commissions from purchases made through these links.",
+    "usCompliance": "18 U.S.C. 2257 Record-Keeping Requirements Compliance Statement",
+    "gdprNotice": "We use cookies to improve your experience. By continuing, you agree to our use of cookies.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "cookiePolicy": "Cookie Policy",
+    "dmcaNotice": "DMCA",
+    "contactUs": "Contact Us"
+  },
+  "network": {
+    "pics": "Pics",
+    "videos": "Videos",
+    "adult": "Adult",
+    "fans": "Fans",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Something went wrong",
+    "tryAgain": "Try again"
+  }
+}

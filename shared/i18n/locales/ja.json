@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "ホーム",
+    "signIn": "ログイン",
+    "logout": "ログアウト",
+    "loading": "読み込み中...",
+    "search": "検索...",
+    "previous": "前へ",
+    "next": "次へ",
+    "page": "ページ",
+    "of": "/",
+    "viewAll": "すべて見る",
+    "back": "戻る"
+  },
+  "compliance": {
+    "ageNotice": "すべてのモデルは撮影時18歳以上です。",
+    "rtaLabeled": "RTAラベル付き。",
+    "fullNotice": "すべてのモデルは撮影時18歳以上です。RTAラベル付き。",
+    "copyright": "全著作権所有。",
+    "affiliateDisclosure": "このサイトにはアフィリエイトリンクが含まれています。",
+    "usCompliance": "18 U.S.C. 2257 コンプライアンス声明",
+    "gdprNotice": "Cookieを使用しています。続行することで、同意したことになります。",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約",
+    "cookiePolicy": "Cookieポリシー",
+    "dmcaNotice": "DMCA",
+    "contactUs": "お問い合わせ"
+  },
+  "network": {
+    "pics": "写真",
+    "videos": "動画",
+    "adult": "アダルト",
+    "fans": "ファン",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "ページが見つかりません",
+    "serverError": "エラーが発生しました",
+    "tryAgain": "再試行"
+  }
+}

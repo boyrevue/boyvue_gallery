@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Startseite",
+    "signIn": "Anmelden",
+    "logout": "Abmelden",
+    "loading": "Laden...",
+    "search": "Suchen...",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page": "Seite",
+    "of": "von",
+    "viewAll": "Alle ansehen",
+    "back": "Zurück"
+  },
+  "compliance": {
+    "ageNotice": "Alle Models sind 18+ zum Zeitpunkt der Darstellung.",
+    "rtaLabeled": "RTA gekennzeichnet.",
+    "fullNotice": "Alle Models sind 18+ zum Zeitpunkt der Darstellung. RTA gekennzeichnet.",
+    "copyright": "Alle Rechte vorbehalten.",
+    "affiliateDisclosure": "Diese Seite enthält Affiliate-Links. Wir erhalten möglicherweise Provisionen.",
+    "usCompliance": "18 U.S.C. 2257 Compliance-Erklärung",
+    "gdprNotice": "Wir verwenden Cookies. Durch die Nutzung stimmen Sie unserer Cookie-Richtlinie zu.",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "termsOfService": "Nutzungsbedingungen",
+    "cookiePolicy": "Cookie-Richtlinie",
+    "dmcaNotice": "DMCA",
+    "contactUs": "Kontakt"
+  },
+  "network": {
+    "pics": "Bilder",
+    "videos": "Videos",
+    "adult": "Erwachsene",
+    "fans": "Fans",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Seite nicht gefunden",
+    "serverError": "Etwas ist schief gelaufen",
+    "tryAgain": "Erneut versuchen"
+  }
+}

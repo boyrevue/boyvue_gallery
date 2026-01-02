@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "홈",
+    "signIn": "로그인",
+    "logout": "로그아웃",
+    "loading": "로딩 중...",
+    "search": "검색...",
+    "previous": "이전",
+    "next": "다음",
+    "page": "페이지",
+    "of": "/",
+    "viewAll": "전체 보기",
+    "back": "뒤로"
+  },
+  "compliance": {
+    "ageNotice": "모든 모델은 촬영 당시 18세 이상입니다.",
+    "rtaLabeled": "RTA 라벨 부착.",
+    "fullNotice": "모든 모델은 촬영 당시 18세 이상입니다. RTA 라벨 부착.",
+    "copyright": "모든 권리 보유.",
+    "affiliateDisclosure": "이 사이트에는 제휴 링크가 포함되어 있습니다.",
+    "usCompliance": "18 U.S.C. 2257 준수 성명",
+    "gdprNotice": "쿠키를 사용합니다. 계속하면 쿠키 사용에 동의하는 것입니다.",
+    "privacyPolicy": "개인정보 처리방침",
+    "termsOfService": "이용약관",
+    "cookiePolicy": "쿠키 정책",
+    "dmcaNotice": "DMCA",
+    "contactUs": "문의하기"
+  },
+  "network": {
+    "pics": "사진",
+    "videos": "동영상",
+    "adult": "성인",
+    "fans": "팬",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "페이지를 찾을 수 없습니다",
+    "serverError": "문제가 발생했습니다",
+    "tryAgain": "다시 시도"
+  }
+}

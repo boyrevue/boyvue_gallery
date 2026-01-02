@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "الرئيسية",
+    "signIn": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "loading": "جاري التحميل...",
+    "search": "بحث...",
+    "previous": "السابق",
+    "next": "التالي",
+    "page": "صفحة",
+    "of": "من",
+    "viewAll": "عرض الكل",
+    "back": "رجوع"
+  },
+  "compliance": {
+    "ageNotice": "جميع العارضين أعمارهم 18+ وقت التصوير.",
+    "rtaLabeled": "مصنف RTA.",
+    "fullNotice": "جميع العارضين أعمارهم 18+ وقت التصوير. مصنف RTA.",
+    "copyright": "جميع الحقوق محفوظة.",
+    "affiliateDisclosure": "يحتوي هذا الموقع على روابط تابعة. قد نكسب عمولات.",
+    "usCompliance": "بيان الامتثال 18 U.S.C. 2257",
+    "gdprNotice": "نستخدم ملفات تعريف الارتباط. بالمتابعة، توافق على استخدامها.",
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة",
+    "cookiePolicy": "سياسة ملفات تعريف الارتباط",
+    "dmcaNotice": "DMCA",
+    "contactUs": "اتصل بنا"
+  },
+  "network": {
+    "pics": "صور",
+    "videos": "فيديو",
+    "adult": "للبالغين",
+    "fans": "معجبين",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "الصفحة غير موجودة",
+    "serverError": "حدث خطأ",
+    "tryAgain": "حاول مرة أخرى"
+  }
+}

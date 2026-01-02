@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 
 // Redirect to central admin on boyvue.com
-function AdminDashboard() {
+export default function AdminPage() {
   useEffect(() => {
     // Redirect to central admin with site parameter
-    window.location.href = 'https://boyvue.com/admin?site=fans';
+    window.location.href = 'https://boyvue.com/admin?site=adult';
   }, []);
 
   return (
@@ -18,16 +18,14 @@ function AdminDashboard() {
       fontFamily: 'Arial, sans-serif'
     }}>
       <div style={{ textAlign: 'center' }}>
-        <h1 style={{ color: '#9c27b0' }}>Redirecting to Central Admin...</h1>
+        <h1 style={{ color: '#ff1493' }}>Redirecting to Central Admin...</h1>
         <p style={{ color: '#888' }}>
-          Admin has been consolidated to <a href="https://boyvue.com/admin" style={{ color: '#9c27b0' }}>boyvue.com/admin</a>
+          Admin has been consolidated to <a href="https://boyvue.com/admin" style={{ color: '#00d4ff' }}>boyvue.com/admin</a>
         </p>
         <p style={{ color: '#666', fontSize: '14px', marginTop: '20px' }}>
-          If you are not redirected automatically, <a href="https://boyvue.com/admin?site=fans" style={{ color: '#9c27b0' }}>click here</a>
+          If you are not redirected automatically, <a href="https://boyvue.com/admin?site=adult" style={{ color: '#00d4ff' }}>click here</a>
         </p>
       </div>
     </div>
   );
 }
-
-export default AdminDashboard;

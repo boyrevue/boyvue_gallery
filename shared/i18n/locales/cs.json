@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Domů",
+    "signIn": "Přihlásit se",
+    "logout": "Odhlásit se",
+    "loading": "Načítání...",
+    "search": "Hledat...",
+    "previous": "Předchozí",
+    "next": "Další",
+    "page": "Stránka",
+    "of": "z",
+    "viewAll": "Zobrazit vše",
+    "back": "Zpět"
+  },
+  "compliance": {
+    "ageNotice": "Všichni modely jsou 18+ v době natáčení.",
+    "rtaLabeled": "RTA označeno.",
+    "fullNotice": "Všichni modely jsou 18+ v době natáčení. RTA označeno.",
+    "copyright": "Všechna práva vyhrazena.",
+    "affiliateDisclosure": "Tento web obsahuje affiliate odkazy. Můžeme získat provize.",
+    "usCompliance": "Prohlášení o souladu s 18 U.S.C. 2257",
+    "gdprNotice": "Používáme cookies. Pokračováním souhlasíte s jejich používáním.",
+    "privacyPolicy": "Zásady ochrany osobních údajů",
+    "termsOfService": "Podmínky služby",
+    "cookiePolicy": "Zásady cookies",
+    "dmcaNotice": "DMCA",
+    "contactUs": "Kontakt"
+  },
+  "network": {
+    "pics": "Obrázky",
+    "videos": "Videa",
+    "adult": "Pro dospělé",
+    "fans": "Fanoušci",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Stránka nenalezena",
+    "serverError": "Něco se pokazilo",
+    "tryAgain": "Zkusit znovu"
+  }
+}

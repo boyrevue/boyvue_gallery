@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "หน้าแรก",
+    "signIn": "เข้าสู่ระบบ",
+    "logout": "ออกจากระบบ",
+    "loading": "กำลังโหลด...",
+    "search": "ค้นหา...",
+    "previous": "ก่อนหน้า",
+    "next": "ถัดไป",
+    "page": "หน้า",
+    "of": "จาก",
+    "viewAll": "ดูทั้งหมด",
+    "back": "กลับ"
+  },
+  "compliance": {
+    "ageNotice": "นางแบบทุกคนอายุ 18+ ขณะถ่ายทำ",
+    "rtaLabeled": "ติดป้าย RTA",
+    "fullNotice": "นางแบบทุกคนอายุ 18+ ขณะถ่ายทำ ติดป้าย RTA",
+    "copyright": "สงวนลิขสิทธิ์",
+    "affiliateDisclosure": "เว็บไซต์นี้มีลิงก์พันธมิตร เราอาจได้รับค่าคอมมิชชั่น",
+    "usCompliance": "คำแถลงการปฏิบัติตาม 18 U.S.C. 2257",
+    "gdprNotice": "เราใช้คุกกี้ การดำเนินการต่อถือว่าคุณยอมรับนโยบายคุกกี้ของเรา",
+    "privacyPolicy": "นโยบายความเป็นส่วนตัว",
+    "termsOfService": "ข้อกำหนดการใช้งาน",
+    "cookiePolicy": "นโยบายคุกกี้",
+    "dmcaNotice": "DMCA",
+    "contactUs": "ติดต่อเรา"
+  },
+  "network": {
+    "pics": "รูปภาพ",
+    "videos": "วิดีโอ",
+    "adult": "ผู้ใหญ่",
+    "fans": "แฟนๆ",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "ไม่พบหน้า",
+    "serverError": "เกิดข้อผิดพลาด",
+    "tryAgain": "ลองอีกครั้ง"
+  }
+}

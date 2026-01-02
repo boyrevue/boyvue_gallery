@@ -3,6 +3,7 @@ import { translations, getLang, setLang, fetchTranslations, fetchLanguages, getT
 import { useAuth } from './hooks/useAuth.js';
 import LoginModal from './components/LoginModal.jsx';
 import HotOrNot from './pages/HotOrNot.jsx';
+import ReviewModal from './components/ReviewModal.jsx';
 
 const API = '/api';
 const VIDEO_EXTS = ['.mp4', '.webm', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
@@ -279,6 +280,7 @@ function App() {
   const [translationData, setTranslationData] = useState(null);
   const [languages, setLanguages] = useState(null);
   const [showHotOrNot, setShowHotOrNot] = useState(false);
+  const [showReview, setShowReview] = useState(null); // {slug, name} or null
   
   // Auth hook for login/logout
   const auth = useAuth();
@@ -399,7 +401,7 @@ function App() {
               <h1 style={{ marginTop: '15px', fontSize: '24px' }}>{selectedImage.title || ui.untitled}</h1>
               <p style={{ color: '#888' }}>{selectedImage.description}</p>
               <div style={{ color: '#666', fontSize: '14px' }}>{ui.views}: {selectedImage.view_count} | {ui.rating}: {parseFloat(selectedImage.average_rating || 0).toFixed(1)}</div>
-              <ShareButtons url={`https://boyvue.com/v/${selectedImage.id}`} title={selectedImage.title} image={`https://boyvue.com/media/${selectedImage.thumbnail_path}`} />
+              <ShareButtons url={`https://boyvue.com/pics/v/${selectedImage.id}`} title={selectedImage.title} image={`https://boyvue.com/media/${selectedImage.thumbnail_path}`} />
               {selectedImage.keywords?.length > 0 && (
                 <div style={{ marginTop: '15px' }}>
                   <span style={{ color: '#888', fontSize: '12px' }}>Tags: </span>
@@ -432,6 +434,7 @@ function App() {
   return (
     <div style={{ fontFamily: 'Arial', background: '#111', color: '#fff', minHeight: '100vh', direction: dir }}>
       {showStatsModal && <StatsModal analytics={analytics} onClose={() => setShowStatsModal(false)} />}
+      {showReview && <ReviewModal categorySlug={showReview.slug} categoryName={showReview.name} lang={lang} onClose={() => setShowReview(null)} />}
       {auth.showLoginModal && <LoginModal 
         onClose={auth.closeLogin}
         onLoginGoogle={auth.loginWithGoogle}
@@ -468,7 +471,7 @@ function App() {
             ) : (
               <button onClick={auth.openLogin} style={{ padding: '8px 16px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}>Sign In</button>
             )}
-            <a href="https://admin.boyvue.com/seo-dashboard" rel="nofollow noopener" target="_blank" style={{ color: '#666', fontSize: '12px', textDecoration: 'none', padding: '8px 12px', background: '#222', borderRadius: '4px' }}>Admin</a>
+            <a href="/admin" rel="nofollow noopener" style={{ color: '#666', fontSize: '12px', textDecoration: 'none', padding: '8px 12px', background: '#222', borderRadius: '4px' }}>Admin</a>
           </div>
         </div>
       </header>
@@ -476,10 +479,25 @@ function App() {
         <aside style={{ width: '250px', background: '#1a1a1a', padding: '20px', minHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
           <h2 style={{ color: '#f60', marginTop: 0, fontSize: '18px' }}>{ui.categories}</h2>
           <div onClick={() => { selectCategory(null); clearSearch(); }} style={{ padding: '8px', cursor: 'pointer', background: !selectedCat && !searchResults ? '#333' : 'transparent', marginBottom: '5px', borderRadius: '4px' }}>{ui.allImages}</div>
-          {categories.map(cat => <div key={cat.id} onClick={() => selectCategory(cat.id)} style={{ padding: '8px', cursor: 'pointer', background: selectedCat === cat.id ? '#333' : 'transparent', marginBottom: '5px', borderRadius: '4px', fontSize: '14px' }}>{cat.catname} <span style={{ color: '#666' }}>({cat.photo_count})</span></div>)}
+          {categories.map(cat => (
+            <div key={cat.id} style={{ display: 'flex', alignItems: 'center', padding: '8px', cursor: 'pointer', background: selectedCat === cat.id ? '#333' : 'transparent', marginBottom: '5px', borderRadius: '4px', fontSize: '14px' }}>
+              <span onClick={() => selectCategory(cat.id)} style={{ flex: 1 }}>{cat.catname} <span style={{ color: '#666' }}>({cat.photo_count})</span></span>
+              {cat.has_review && (
+                <button onClick={(e) => { e.stopPropagation(); setShowReview({ slug: cat.slug || cat.catname, name: cat.catname }); }} title="View Review" style={{ background: 'transparent', border: 'none', color: '#f60', cursor: 'pointer', padding: '2px 6px', fontSize: '14px', marginLeft: '4px' }}>&#9733;</button>
+              )}
+            </div>
+          ))}
         </aside>
         <main style={{ flex: 1, padding: '20px' }}>
-          <h2 style={{ marginTop: 0, marginBottom: '20px' }}>{currentTitle}{searchResults && <button onClick={clearSearch} style={{ marginLeft: '15px', padding: '5px 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{ui.clearSearch}</button>}</h2>
+          <h2 style={{ marginTop: 0, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+            <span>{currentTitle}</span>
+            {selectedCatData?.has_review && (
+              <button onClick={() => setShowReview({ slug: selectedCatData.slug || selectedCatData.catname, name: selectedCatData.catname })} style={{ padding: '6px 12px', background: 'linear-gradient(145deg, #f60, #c50)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ fontSize: '14px' }}>&#9733;</span> View Review
+              </button>
+            )}
+            {searchResults && <button onClick={clearSearch} style={{ padding: '5px 10px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>{ui.clearSearch}</button>}
+          </h2>
           {selectedCatData?.description && <p style={{ color: '#888', marginBottom: '20px' }}>{selectedCatData.description}</p>}
           {loading ? <p>{ui.loading}</p> : (
             <>

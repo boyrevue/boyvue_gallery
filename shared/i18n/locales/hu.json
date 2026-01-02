@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Főoldal",
+    "signIn": "Bejelentkezés",
+    "logout": "Kijelentkezés",
+    "loading": "Betöltés...",
+    "search": "Keresés...",
+    "previous": "Előző",
+    "next": "Következő",
+    "page": "Oldal",
+    "of": "/",
+    "viewAll": "Összes megtekintése",
+    "back": "Vissza"
+  },
+  "compliance": {
+    "ageNotice": "Minden modell 18 év feletti a felvétel időpontjában.",
+    "rtaLabeled": "RTA címkézett.",
+    "fullNotice": "Minden modell 18 év feletti a felvétel időpontjában. RTA címkézett.",
+    "copyright": "Minden jog fenntartva.",
+    "affiliateDisclosure": "Ez az oldal affiliate linkeket tartalmaz. Jutalékot kaphatunk.",
+    "usCompliance": "18 U.S.C. 2257 Megfelelőségi nyilatkozat",
+    "gdprNotice": "Cookie-kat használunk. A folytatással elfogadja a cookie-k használatát.",
+    "privacyPolicy": "Adatvédelmi irányelvek",
+    "termsOfService": "Felhasználási feltételek",
+    "cookiePolicy": "Cookie szabályzat",
+    "dmcaNotice": "DMCA",
+    "contactUs": "Kapcsolat"
+  },
+  "network": {
+    "pics": "Képek",
+    "videos": "Videók",
+    "adult": "Felnőtt",
+    "fans": "Rajongók",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Az oldal nem található",
+    "serverError": "Hiba történt",
+    "tryAgain": "Próbálja újra"
+  }
+}

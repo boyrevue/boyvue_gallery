@@ -1,0 +1,41 @@
+{
+  "common": {
+    "home": "Ana Sayfa",
+    "signIn": "Giriş Yap",
+    "logout": "Çıkış",
+    "loading": "Yükleniyor...",
+    "search": "Ara...",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "page": "Sayfa",
+    "of": "/",
+    "viewAll": "Tümünü Gör",
+    "back": "Geri"
+  },
+  "compliance": {
+    "ageNotice": "Tüm modeller çekim anında 18 yaş ve üzerindedir.",
+    "rtaLabeled": "RTA etiketli.",
+    "fullNotice": "Tüm modeller çekim anında 18 yaş ve üzerindedir. RTA etiketli.",
+    "copyright": "Tüm hakları saklıdır.",
+    "affiliateDisclosure": "Bu site ortaklık bağlantıları içerir. Komisyon kazanabiliriz.",
+    "usCompliance": "18 U.S.C. 2257 Uyumluluk Beyanı",
+    "gdprNotice": "Çerezleri kullanıyoruz. Devam ederek çerez kullanımımızı kabul ediyorsunuz.",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfService": "Hizmet Şartları",
+    "cookiePolicy": "Çerez Politikası",
+    "dmcaNotice": "DMCA",
+    "contactUs": "İletişim"
+  },
+  "network": {
+    "pics": "Resimler",
+    "videos": "Videolar",
+    "adult": "Yetişkin",
+    "fans": "Hayranlar",
+    "main": "BoyVue"
+  },
+  "errors": {
+    "notFound": "Sayfa bulunamadı",
+    "serverError": "Bir hata oluştu",
+    "tryAgain": "Tekrar dene"
+  }
+}
