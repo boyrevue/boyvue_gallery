@@ -15,7 +15,7 @@ const SITES = [
 // Fans-specific tabs
 const FANS_TABS = ['overview', 'seo', 'sitemaps', 'platforms', 'performers', 'themes', 'spider', 'links', 'analytics'];
 
-export default function UnifiedAdmin() {
+export default function AdminPage() {
   const [token, setToken] = useState(localStorage.getItem('adminToken') || '');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);

@@ -1,12 +1,13 @@
 /**
  * Admin API Routes
  * Provides admin dashboard with search engine analytics
- * Protected by basic authentication
+ * Protected by basic authentication or admin email whitelist
  */
 
 import express from 'express';
 import pg from 'pg';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -29,6 +30,15 @@ const pool = new Pool({
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'boyvue2025';
 
+// Admin email whitelist - users with these emails can access admin via their regular login
+const ADMIN_EMAILS = [
+  'v.power@diddi.io',
+  'v.power@diggi.io'
+];
+
+// JWT secret (same as auth-routes.js)
+const JWT_SECRET = process.env.JWT_SECRET || 'boyvue-jwt-secret-change-in-production';
+
 // Simple session store
 const sessions = new Map();
 const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -38,36 +48,80 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-// Auth middleware
-function requireAuth(req, res, next) {
-  const token = req.headers['x-admin-token'] || req.query.token;
-  if (!token || !sessions.has(token)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  const session = sessions.get(token);
-  if (Date.now() - session.created > SESSION_TTL) {
-    sessions.delete(token);
-    return res.status(401).json({ error: 'Session expired' });
-  }
-  req.adminUser = session.user;
-  next();
+// Check if email is admin
+function isAdminEmail(email) {
+  return email && ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
-// Login
-router.post('/login', (req, res) => {
+// Get user from JWT cookie/header
+function getUserFromJwt(req) {
+  const token = req.cookies?.access_token || req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return null;
+
   try {
-    const { username, password } = req.body || {};
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    return null;
+  }
+}
+
+// Auth middleware - supports both admin token and admin email via JWT
+function requireAuth(req, res, next) {
+  // First check admin token
+  const token = req.headers['x-admin-token'] || req.query.token;
+  if (token && sessions.has(token)) {
+    const session = sessions.get(token);
+    if (Date.now() - session.created <= SESSION_TTL) {
+      req.adminUser = session.user;
+      return next();
+    }
+    sessions.delete(token);
+  }
+
+  // Then check JWT for admin email
+  const jwtUser = getUserFromJwt(req);
+  if (jwtUser && isAdminEmail(jwtUser.email)) {
+    req.adminUser = jwtUser.email;
+    return next();
+  }
+
+  return res.status(401).json({ error: 'Unauthorized' });
+}
+
+// Login - supports both password and email-based auth
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password, email } = req.body || {};
+
+    // Check admin credentials
     if (username === ADMIN_USER && password === ADMIN_PASS) {
       const token = generateToken();
       sessions.set(token, { user: username, created: Date.now() });
-      res.json({ success: true, token });
-    } else {
-      res.status(401).json({ error: 'Invalid credentials' });
+      return res.json({ success: true, token });
     }
+
+    // Check if email login (for admin email whitelist)
+    if (email && isAdminEmail(email)) {
+      const token = generateToken();
+      sessions.set(token, { user: email, created: Date.now(), isEmailAdmin: true });
+      return res.json({ success: true, token });
+    }
+
+    res.status(401).json({ error: 'Invalid credentials' });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
   }
+});
+
+// Check if current user is admin (for frontend to show admin link)
+router.get('/check-admin', (req, res) => {
+  const jwtUser = getUserFromJwt(req);
+  if (jwtUser && isAdminEmail(jwtUser.email)) {
+    return res.json({ isAdmin: true, email: jwtUser.email });
+  }
+  res.json({ isAdmin: false });
 });
 
 // Logout
@@ -80,6 +134,325 @@ router.post('/logout', requireAuth, (req, res) => {
 // Check auth status
 router.get('/status', requireAuth, (req, res) => {
   res.json({ authenticated: true, user: req.adminUser });
+});
+
+// Settings file path
+const SETTINGS_FILE = join(__dirname_admin, '../../data/admin-settings.json');
+
+// Get global settings
+router.get('/settings', requireAuth, async (req, res) => {
+  try {
+    let settings = {
+      cloudflare: { zoneId: '', apiToken: '', email: '' },
+      gsc: { clientEmail: '', privateKey: '', projectId: '' },
+      dataforseo: { login: '', password: '' },
+      openai: { apiKey: '' },
+    };
+
+    if (existsSync(SETTINGS_FILE)) {
+      const data = readFileSync(SETTINGS_FILE, 'utf8');
+      settings = JSON.parse(data);
+    }
+
+    // Mask sensitive data for display
+    const masked = {
+      cloudflare: {
+        zoneId: settings.cloudflare?.zoneId || '',
+        apiToken: settings.cloudflare?.apiToken ? '••••••••' : '',
+        email: settings.cloudflare?.email || '',
+      },
+      gsc: {
+        projectId: settings.gsc?.projectId || '',
+        clientEmail: settings.gsc?.clientEmail || '',
+        privateKey: settings.gsc?.privateKey ? '••••••••' : '',
+      },
+      dataforseo: {
+        login: settings.dataforseo?.login || '',
+        password: settings.dataforseo?.password ? '••••••••' : '',
+      },
+      openai: {
+        apiKey: settings.openai?.apiKey ? '••••••••' : '',
+      },
+    };
+
+    res.json({ settings: masked });
+  } catch (err) {
+    console.error('Error loading settings:', err);
+    res.status(500).json({ error: 'Failed to load settings' });
+  }
+});
+
+// Save global settings
+router.post('/settings', requireAuth, async (req, res) => {
+  try {
+    const { settings } = req.body;
+    if (!settings) {
+      return res.status(400).json({ error: 'Settings required' });
+    }
+
+    // Load existing settings to preserve masked values
+    let existing = {};
+    if (existsSync(SETTINGS_FILE)) {
+      existing = JSON.parse(readFileSync(SETTINGS_FILE, 'utf8'));
+    }
+
+    // Merge settings, keeping existing values for masked fields
+    const merged = {
+      cloudflare: {
+        zoneId: settings.cloudflare?.zoneId || existing.cloudflare?.zoneId || '',
+        apiToken: settings.cloudflare?.apiToken === '••••••••'
+          ? existing.cloudflare?.apiToken
+          : (settings.cloudflare?.apiToken || existing.cloudflare?.apiToken || ''),
+        email: settings.cloudflare?.email || existing.cloudflare?.email || '',
+      },
+      gsc: {
+        projectId: settings.gsc?.projectId || existing.gsc?.projectId || '',
+        clientEmail: settings.gsc?.clientEmail || existing.gsc?.clientEmail || '',
+        privateKey: settings.gsc?.privateKey === '••••••••'
+          ? existing.gsc?.privateKey
+          : (settings.gsc?.privateKey || existing.gsc?.privateKey || ''),
+      },
+      dataforseo: {
+        login: settings.dataforseo?.login || existing.dataforseo?.login || '',
+        password: settings.dataforseo?.password === '••••••••'
+          ? existing.dataforseo?.password
+          : (settings.dataforseo?.password || existing.dataforseo?.password || ''),
+      },
+      openai: {
+        apiKey: settings.openai?.apiKey === '••••••••'
+          ? existing.openai?.apiKey
+          : (settings.openai?.apiKey || existing.openai?.apiKey || ''),
+      },
+    };
+
+    // Ensure data directory exists
+    const dataDir = dirname(SETTINGS_FILE);
+    if (!existsSync(dataDir)) {
+      const { mkdirSync } = await import('fs');
+      mkdirSync(dataDir, { recursive: true });
+    }
+
+    // Write settings
+    const { writeFileSync } = await import('fs');
+    writeFileSync(SETTINGS_FILE, JSON.stringify(merged, null, 2));
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error saving settings:', err);
+    res.status(500).json({ error: 'Failed to save settings' });
+  }
+});
+
+// Test API connection
+router.post('/settings/test/:api', requireAuth, async (req, res) => {
+  try {
+    const { api } = req.params;
+    const { settings } = req.body;
+
+    // Load actual settings (not masked)
+    let actualSettings = {};
+    if (existsSync(SETTINGS_FILE)) {
+      actualSettings = JSON.parse(readFileSync(SETTINGS_FILE, 'utf8'));
+    }
+
+    // Use provided settings or fall back to saved
+    const testSettings = settings || actualSettings[api];
+
+    switch (api) {
+      case 'cloudflare': {
+        const cfToken = testSettings?.apiToken === '••••••••'
+          ? actualSettings.cloudflare?.apiToken
+          : testSettings?.apiToken;
+        const cfZone = testSettings?.zoneId || actualSettings.cloudflare?.zoneId;
+
+        if (!cfToken || !cfZone) {
+          return res.json({ success: false, error: 'Missing Zone ID or API Token' });
+        }
+
+        const cfRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${cfZone}`, {
+          headers: { 'Authorization': `Bearer ${cfToken}` }
+        });
+        const cfData = await cfRes.json();
+
+        if (cfData.success) {
+          res.json({
+            success: true,
+            status: {
+              connected: true,
+              zoneName: cfData.result.name,
+              features: ['Cache Purge', 'DNS', 'Firewall', 'Analytics']
+            }
+          });
+        } else {
+          res.json({ success: false, error: cfData.errors?.[0]?.message || 'Connection failed' });
+        }
+        break;
+      }
+
+      case 'dataforseo': {
+        const dfsLogin = testSettings?.login || actualSettings.dataforseo?.login;
+        const dfsPass = testSettings?.password === '••••••••'
+          ? actualSettings.dataforseo?.password
+          : testSettings?.password;
+
+        if (!dfsLogin || !dfsPass) {
+          return res.json({ success: false, error: 'Missing login or password' });
+        }
+
+        const auth = Buffer.from(`${dfsLogin}:${dfsPass}`).toString('base64');
+        const dfsRes = await fetch('https://api.dataforseo.com/v3/appendix/user_data', {
+          headers: { 'Authorization': `Basic ${auth}` }
+        });
+        const dfsData = await dfsRes.json();
+
+        if (dfsData.status_code === 20000) {
+          res.json({
+            success: true,
+            status: {
+              connected: true,
+              balance: dfsData.tasks?.[0]?.result?.[0]?.money?.balance || 0
+            }
+          });
+        } else {
+          res.json({ success: false, error: dfsData.status_message || 'Connection failed' });
+        }
+        break;
+      }
+
+      case 'openai': {
+        const oaiKey = testSettings?.apiKey === '••••••••'
+          ? actualSettings.openai?.apiKey
+          : testSettings?.apiKey;
+
+        if (!oaiKey) {
+          return res.json({ success: false, error: 'Missing API key' });
+        }
+
+        const oaiRes = await fetch('https://api.openai.com/v1/models', {
+          headers: { 'Authorization': `Bearer ${oaiKey}` }
+        });
+
+        if (oaiRes.ok) {
+          res.json({ success: true, status: { connected: true } });
+        } else {
+          res.json({ success: false, error: 'Invalid API key' });
+        }
+        break;
+      }
+
+      case 'gsc': {
+        // GSC requires more complex OAuth setup, just validate credentials exist
+        const clientEmail = testSettings?.clientEmail || actualSettings.gsc?.clientEmail;
+        const privateKey = testSettings?.privateKey === '••••••••'
+          ? actualSettings.gsc?.privateKey
+          : testSettings?.privateKey;
+
+        if (!clientEmail || !privateKey) {
+          return res.json({ success: false, error: 'Missing client email or private key' });
+        }
+
+        res.json({
+          success: true,
+          status: {
+            connected: true,
+            message: 'Credentials saved. GSC API will be available.',
+            sites: ['https://boyvue.com', 'https://fans.boyvue.com']
+          }
+        });
+        break;
+      }
+
+      default:
+        res.json({ success: false, error: 'Unknown API' });
+    }
+  } catch (err) {
+    console.error('Error testing API:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Export data endpoint
+router.get('/export/:dataType', requireAuth, async (req, res) => {
+  try {
+    const { dataType } = req.params;
+    const { format = 'csv' } = req.query;
+
+    let data = [];
+    let filename = `${dataType}-export`;
+
+    switch (dataType) {
+      case 'analytics':
+        const analyticsResult = await pool.query(`
+          SELECT
+            path,
+            COUNT(*) as pageviews,
+            COUNT(DISTINCT ip) as unique_visitors,
+            DATE(created_at) as date
+          FROM analytics
+          WHERE created_at > NOW() - INTERVAL '30 days'
+          GROUP BY path, DATE(created_at)
+          ORDER BY date DESC, pageviews DESC
+          LIMIT 1000
+        `);
+        data = analyticsResult.rows;
+        break;
+
+      case 'rankings':
+        // Placeholder for keyword rankings
+        data = [{ keyword: 'Sample', position: 1, date: new Date().toISOString() }];
+        break;
+
+      case 'competitors':
+        const competitorResult = await pool.query(`
+          SELECT domain, keywords_count, backlinks_count, traffic_estimate
+          FROM seo_websites
+          ORDER BY keywords_count DESC
+          LIMIT 100
+        `);
+        data = competitorResult.rows;
+        break;
+
+      case 'traffic':
+        const trafficResult = await pool.query(`
+          SELECT
+            DATE(created_at) as date,
+            COUNT(*) as pageviews,
+            COUNT(DISTINCT ip) as visitors
+          FROM analytics
+          WHERE created_at > NOW() - INTERVAL '30 days'
+          GROUP BY DATE(created_at)
+          ORDER BY date DESC
+        `);
+        data = trafficResult.rows;
+        break;
+
+      default:
+        return res.status(400).json({ error: 'Unknown data type' });
+    }
+
+    if (format === 'csv') {
+      const headers = data.length > 0 ? Object.keys(data[0]).join(',') : '';
+      const rows = data.map(row => Object.values(row).join(',')).join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+      res.send(`${headers}\n${rows}`);
+    } else if (format === 'xlsx') {
+      // For Excel, we'd need a library like xlsx - return JSON for now
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
+      res.json(data);
+    } else if (format === 'pdf') {
+      // For PDF, we'd need a library like pdfkit - return JSON for now
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
+      res.json(data);
+    } else {
+      res.json(data);
+    }
+  } catch (err) {
+    console.error('Error exporting data:', err);
+    res.status(500).json({ error: 'Export failed' });
+  }
 });
 
 // Search engine referrer analytics
@@ -1121,6 +1494,78 @@ router.get('/seo/websites-full', requireAuth, async (req, res) => {
   }
 });
 
+// Get competitor stats summary
+router.get('/seo/competitor-stats', requireAuth, async (req, res) => {
+  try {
+    // Total competitors
+    const competitors = await pool.query('SELECT COUNT(*) as count FROM seo_websites WHERE last_fetched IS NOT NULL');
+
+    // Total keywords
+    const keywords = await pool.query('SELECT COUNT(*) as total, COUNT(DISTINCT LOWER(keyword)) as unique_count FROM seo_website_keywords');
+
+    // High volume keywords (10K+)
+    const highVolume = await pool.query('SELECT COUNT(DISTINCT LOWER(keyword)) as count FROM seo_website_keywords WHERE search_volume > 10000');
+
+    // Gay-specific keywords
+    const gayKeywords = await pool.query(`
+      SELECT COUNT(DISTINCT LOWER(keyword)) as count
+      FROM seo_website_keywords
+      WHERE keyword ILIKE '%gay%' OR keyword ILIKE '%twink%' OR keyword ILIKE '%boy%'
+    `);
+
+    // Top competitors by rank
+    const topCompetitors = await pool.query(`
+      SELECT name, url, domain_rank, total_backlinks, total_keywords, last_fetched
+      FROM seo_websites
+      WHERE domain_rank IS NOT NULL
+      ORDER BY domain_rank DESC
+      LIMIT 15
+    `);
+
+    // Top keywords by volume
+    const topKeywords = await pool.query(`
+      SELECT keyword, MAX(search_volume) as volume, COUNT(DISTINCT website_id) as competitor_count
+      FROM seo_website_keywords
+      WHERE keyword NOT IN ('porn', 'pornhub', 'xvideos', 'xhamster', 'yourb', 'sex', 'porns', 'porn hub')
+      GROUP BY keyword
+      ORDER BY MAX(search_volume) DESC
+      LIMIT 30
+    `);
+
+    // SERP content count
+    const serpCount = await pool.query('SELECT COUNT(*) as count FROM seo_serp_content');
+
+    res.json({
+      competitorCount: parseInt(competitors.rows[0].count),
+      totalKeywords: parseInt(keywords.rows[0].total),
+      uniqueKeywords: parseInt(keywords.rows[0].unique_count),
+      highVolumeKeywords: parseInt(highVolume.rows[0].count),
+      gayKeywords: parseInt(gayKeywords.rows[0].count),
+      serpContentCount: parseInt(serpCount.rows[0].count),
+      topCompetitors: topCompetitors.rows,
+      topKeywords: topKeywords.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch competitor stats: ' + error.message });
+  }
+});
+
+// Get keywords for a specific competitor
+router.get('/seo/competitor/:id/keywords', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT keyword, position, search_volume, cpc, url, fetched_at
+      FROM seo_website_keywords
+      WHERE website_id = $1
+      ORDER BY search_volume DESC NULLS LAST
+    `, [id]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch keywords' });
+  }
+});
+
 // Process keywords and match to categories
 router.post('/seo/match-keywords-to-categories', requireAuth, async (req, res) => {
   try {
@@ -1577,6 +2022,136 @@ router.get('/seo/terms/:lang', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     res.json([]);
+  }
+});
+
+// ===== REVIEW COMMENTS MODERATION =====
+
+// Get all pending comments for moderation
+router.get('/review-comments/pending', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT src.*, sr.site_name, c.catname
+      FROM site_review_comments src
+      JOIN site_reviews sr ON sr.id = src.review_id
+      JOIN category c ON c.id = sr.category_id
+      WHERE src.status = 'pending'
+      ORDER BY src.created_at DESC
+      LIMIT 100
+    `);
+    res.json({ comments: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all comments (for review management)
+router.get('/review-comments', requireAuth, async (req, res) => {
+  try {
+    const { status, limit = 50 } = req.query;
+    let query = `
+      SELECT src.*, sr.site_name, c.catname
+      FROM site_review_comments src
+      JOIN site_reviews sr ON sr.id = src.review_id
+      JOIN category c ON c.id = sr.category_id
+    `;
+    const params = [];
+
+    if (status) {
+      query += ' WHERE src.status = $1';
+      params.push(status);
+    }
+
+    query += ` ORDER BY src.created_at DESC LIMIT ${parseInt(limit)}`;
+
+    const result = await pool.query(query, params);
+    res.json({ comments: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Approve a comment
+router.post('/review-comments/:id/approve', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query(`
+      UPDATE site_review_comments
+      SET status = 'approved', moderated_at = NOW(), moderated_by = $2
+      WHERE id = $1
+    `, [id, req.adminUser]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reject a comment
+router.post('/review-comments/:id/reject', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query(`
+      UPDATE site_review_comments
+      SET status = 'rejected', moderated_at = NOW(), moderated_by = $2
+      WHERE id = $1
+    `, [id, req.adminUser]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a comment
+router.delete('/review-comments/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM site_review_comments WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk moderate comments
+router.post('/review-comments/bulk', requireAuth, async (req, res) => {
+  try {
+    const { ids, action } = req.body;
+
+    if (!ids?.length || !['approve', 'reject', 'delete'].includes(action)) {
+      return res.status(400).json({ error: 'Invalid request' });
+    }
+
+    if (action === 'delete') {
+      await pool.query('DELETE FROM site_review_comments WHERE id = ANY($1)', [ids]);
+    } else {
+      const status = action === 'approve' ? 'approved' : 'rejected';
+      await pool.query(`
+        UPDATE site_review_comments
+        SET status = $1, moderated_at = NOW(), moderated_by = $2
+        WHERE id = ANY($3)
+      `, [status, req.adminUser, ids]);
+    }
+
+    res.json({ success: true, count: ids.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get comment moderation stats
+router.get('/review-comments/stats', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'pending') as pending,
+        COUNT(*) FILTER (WHERE status = 'approved') as approved,
+        COUNT(*) FILTER (WHERE status = 'rejected') as rejected,
+        COUNT(*) as total
+      FROM site_review_comments
+    `);
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

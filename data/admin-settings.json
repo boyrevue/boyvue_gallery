@@ -1,0 +1,19 @@
+{
+  "cloudflare": {
+    "zoneId": "1fce7632151a0095ddba753d9b024645",
+    "apiToken": "2Lw4PGbylPQYF-lzW6IWkS_sfiqhZVi_CqYtircs",
+    "email": ""
+  },
+  "gsc": {
+    "projectId": "",
+    "clientEmail": "",
+    "privateKey": ""
+  },
+  "dataforseo": {
+    "login": "",
+    "password": ""
+  },
+  "openai": {
+    "apiKey": ""
+  }
+}
