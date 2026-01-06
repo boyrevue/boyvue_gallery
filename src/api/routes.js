@@ -1619,12 +1619,28 @@ router.get('/gallery/:slug', async (req, res) => {
         total,
         pages: Math.ceil(total / limit),
         hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1
+        hasPrev: page > 1,
+        // SEO-friendly pagination URLs
+        nextUrl: page < Math.ceil(total / limit) ? `/gallery/${slug}/?page=${page + 1}` : null,
+        prevUrl: page > 1 ? `/gallery/${slug}/?page=${page - 1}` : null,
+        nextSeoTitle: page < Math.ceil(total / limit) ? `${category.catname} Photos - Page ${page + 1}` : null,
+        prevSeoTitle: page > 1 ? `${category.catname} Photos - Page ${page - 1}` : null
+      },
+      breadcrumbs: [
+        { name: 'Home', url: '/', seoTitle: 'BoyVue - Free Gay Twink Photos' },
+        { name: 'Sites', url: '/sites', seoTitle: 'Browse All Gay Twink Sites' },
+        { name: category.catname, url: `/gallery/${slug}/`, seoTitle: `${category.catname} - Nude Twink Gallery` }
+      ],
+      internalLinks: {
+        sites: { url: '/sites', title: 'All Sites', seoAlt: 'Browse all gay twink photo sites' },
+        journey: { url: '/journey', title: 'Discover', seoAlt: 'Discover trending nude twink content' },
+        hotornot: { url: '/hotornot.php', title: 'Hot or Not', seoAlt: 'Rate gay twink photos' },
+        videos: { url: '/gallery/gay+videos/', title: 'Videos', seoAlt: 'Watch free gay twink videos' }
       },
       seo: {
         title: seoTitle,
         description: seoDescription,
-        keywords: seoKeywords,
+        keywords: seoKeywords.length > 0 ? seoKeywords : GSC_KEYWORDS.slice(0, 10),
         ogImage,
         canonical: `https://boysreview.com/gallery/${category.catname.toLowerCase().replace(/\s+/g, '-')}/`
       }
@@ -1669,7 +1685,7 @@ router.get('/photo/:id', async (req, res) => {
       LIMIT 12
     `, [photo.belongs_to_gallery, photoId]);
 
-    // Get previous and next photos for navigation
+    // Get previous and next photos for navigation with full SEO details
     const navResult = await pool.query(`
       SELECT
         (SELECT id FROM image WHERE belongs_to_gallery = $1 AND id < $2 ORDER BY id DESC LIMIT 1) as prev_id,
@@ -1677,14 +1693,6 @@ router.get('/photo/:id', async (req, res) => {
     `, [photo.belongs_to_gallery, photoId]);
 
     const nav = navResult.rows[0];
-
-    // Generate SEO metadata
-    const siteName = photo.category_name || 'Gallery';
-    const seoTitle = photo.title
-      ? `${photo.title} - ${siteName} | BoyVue`
-      : `${siteName} Photo #${photoId} | BoyVue`;
-    const seoDescription = photo.description ||
-      `View this photo from ${siteName}. Browse more free gay twink pics and videos.`;
 
     // Fix video thumbnails: convert .mp4/.webm/.flv to .jpg
     const fixVideoThumb = (path) => {
@@ -1694,9 +1702,89 @@ router.get('/photo/:id', async (req, res) => {
       return path;
     };
 
+    // Fetch full details for prev/next photos for enhanced SEO
+    let prevPhoto = null, nextPhoto = null;
+    if (nav.prev_id) {
+      const prevResult = await pool.query(
+        'SELECT id, title, thumbnail_path FROM image WHERE id = $1',
+        [nav.prev_id]
+      );
+      if (prevResult.rows.length > 0) {
+        const p = prevResult.rows[0];
+        prevPhoto = {
+          id: p.id,
+          title: p.title,
+          thumbnail: fixVideoThumb(p.thumbnail_path),
+          url: `/photo/${p.id}/`,
+          seoAlt: generateSeoAlt(p.title, photo.category_name, 'photo'),
+          seoTitle: `Previous: ${p.title || photo.category_name + ' Photo'}`
+        };
+      }
+    }
+    if (nav.next_id) {
+      const nextResult = await pool.query(
+        'SELECT id, title, thumbnail_path FROM image WHERE id = $1',
+        [nav.next_id]
+      );
+      if (nextResult.rows.length > 0) {
+        const n = nextResult.rows[0];
+        nextPhoto = {
+          id: n.id,
+          title: n.title,
+          thumbnail: fixVideoThumb(n.thumbnail_path),
+          url: `/photo/${n.id}/`,
+          seoAlt: generateSeoAlt(n.title, photo.category_name, 'photo'),
+          seoTitle: `Next: ${n.title || photo.category_name + ' Photo'}`
+        };
+      }
+    }
+
+    // Generate SEO metadata
+    const siteName = photo.category_name || 'Gallery';
+    const seoTitle = photo.title
+      ? `${photo.title} - ${siteName} | BoyVue`
+      : `${siteName} Photo #${photoId} | BoyVue`;
+    const seoDescription = photo.description ||
+      `View this photo from ${siteName}. Browse more free gay twink pics and videos.`;
+
     // Determine if this is a video
     const isVideo = photo.local_path && /\.(mp4|webm|flv|avi|mov|wmv)$/i.test(photo.local_path);
     const contentType = isVideo ? 'video' : 'photo';
+
+    // Generate breadcrumb SEO
+    const categorySlug = photo.category_name?.toLowerCase().replace(/\s+/g, '-') || 'gallery';
+    const breadcrumbs = [
+      { name: 'Home', url: '/', seoTitle: 'BoyVue Home - Free Gay Twink Photos' },
+      { name: 'Sites', url: '/sites', seoTitle: 'All Gay Twink Sites' },
+      { name: photo.category_name || 'Gallery', url: `/gallery/${categorySlug}/`, seoTitle: `${photo.category_name} - Nude Twink Photos` },
+      { name: photo.title || `Photo #${photoId}`, url: `/photo/${photoId}/`, seoTitle: seoTitle }
+    ];
+
+    // Full-size image SEO
+    const fullImageSeo = {
+      alt: generateSeoAlt(photo.title, photo.category_name, contentType),
+      title: `${photo.title || photo.category_name} - Full Size ${isVideo ? 'Video' : 'Photo'}`,
+      description: `View full size ${isVideo ? 'video' : 'photo'} of ${photo.title || 'content'} from ${photo.category_name}. Free gay twink content.`
+    };
+
+    // Internal links for SEO
+    const internalLinks = {
+      gallery: {
+        url: `/gallery/${categorySlug}/`,
+        title: `More from ${photo.category_name}`,
+        seoAlt: `View more nude twink photos from ${photo.category_name}`
+      },
+      sites: {
+        url: '/sites',
+        title: 'Browse All Sites',
+        seoAlt: 'Browse all gay twink photo sites'
+      },
+      hotornot: {
+        url: '/hotornot.php',
+        title: 'Rate Photos',
+        seoAlt: 'Rate hot or not gay twink photos'
+      }
+    };
 
     res.json({
       photo: {
@@ -1712,28 +1800,36 @@ router.get('/photo/:id', async (req, res) => {
         date: photo.created_at,
         categoryId: photo.category_id,
         categoryName: photo.category_name,
-        categorySlug: photo.category_name?.toLowerCase().replace(/\s+/g, '-'),
+        categorySlug: categorySlug,
         approved: photo.approved,
         belongs_to_gallery: photo.belongs_to_gallery,
         seoAlt: generateSeoAlt(photo.title, photo.category_name, contentType),
-        seoTitle: generateSeoTitle(photo.title, photo.category_name, contentType)
+        seoTitle: generateSeoTitle(photo.title, photo.category_name, contentType),
+        fullImageSeo: fullImageSeo
       },
       navigation: {
+        prev: prevPhoto,
+        next: nextPhoto,
         prevId: nav.prev_id,
         nextId: nav.next_id
       },
+      breadcrumbs: breadcrumbs,
+      internalLinks: internalLinks,
       related: relatedResult.rows.map(r => ({
         id: r.id,
         title: r.title,
         thumbnail: fixVideoThumb(r.thumbnail_path),
         views: r.view_count,
-        seoAlt: generateSeoAlt(r.title, photo.category_name, 'photo')
+        url: `/photo/${r.id}/`,
+        seoAlt: generateSeoAlt(r.title, photo.category_name, 'photo'),
+        seoTitle: generateSeoTitle(r.title, photo.category_name, 'photo')
       })),
       seo: {
         title: seoTitle,
         description: seoDescription,
         ogImage: fixVideoThumb(photo.thumbnail_path),
-        canonical: `https://boysreview.com/photo/${photoId}/`
+        canonical: `https://boysreview.com/photo/${photoId}/`,
+        keywords: GSC_KEYWORDS.slice(0, 8).concat([photo.category_name, photo.title].filter(Boolean))
       }
     });
   } catch(e) {

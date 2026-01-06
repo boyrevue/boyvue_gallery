@@ -8,10 +8,12 @@ import express from 'express';
 import pg from 'pg';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import integrationsRouter from './integrations.js';
+import { getAdminSession } from './auth-routes.js';
 
 const __dirname_admin = dirname(fileURLToPath(import.meta.url));
 
@@ -134,6 +136,174 @@ router.post('/logout', requireAuth, (req, res) => {
 // Check auth status
 router.get('/status', requireAuth, (req, res) => {
   res.json({ authenticated: true, user: req.adminUser });
+});
+
+// Apache access log stats
+router.get('/apache-stats', requireAuth, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 7;
+    const { execSync } = await import('child_process');
+    const fs = await import('fs');
+
+    // Find the log file
+    const logPaths = [
+      '/var/log/apache2/access.log',
+      '/var/log/httpd/access_log',
+      '/var/log/apache2/other_vhosts_access.log'
+    ];
+
+    let logPath = null;
+    for (const p of logPaths) {
+      if (fs.existsSync(p)) {
+        logPath = p;
+        break;
+      }
+    }
+
+    if (!logPath) {
+      return res.json({
+        success: true,
+        stats: {
+          totalRequests: 0,
+          uniqueVisitors: 0,
+          totalBandwidth: 0,
+          errorCount: 0,
+          topPages: [],
+          topReferrers: [],
+          botTraffic: [],
+          statusCodes: [],
+          recentErrors: [],
+          message: 'No Apache log file found'
+        }
+      });
+    }
+
+    // Calculate date threshold
+    const dateThreshold = new Date();
+    dateThreshold.setDate(dateThreshold.getDate() - days);
+
+    // Parse logs using shell commands for efficiency
+    const stats = {
+      totalRequests: 0,
+      uniqueVisitors: 0,
+      totalBandwidth: 0,
+      errorCount: 0,
+      topPages: [],
+      topReferrers: [],
+      botTraffic: [],
+      statusCodes: [],
+      recentErrors: []
+    };
+
+    try {
+      // Total requests
+      const totalCmd = `wc -l < "${logPath}" 2>/dev/null || echo 0`;
+      stats.totalRequests = parseInt(execSync(totalCmd, { encoding: 'utf8' }).trim()) || 0;
+
+      // Unique IPs
+      const uniqueCmd = `awk '{print $1}' "${logPath}" 2>/dev/null | sort -u | wc -l || echo 0`;
+      stats.uniqueVisitors = parseInt(execSync(uniqueCmd, { encoding: 'utf8' }).trim()) || 0;
+
+      // Top pages (excluding static assets)
+      const topPagesCmd = `awk '{print $7}' "${logPath}" 2>/dev/null | grep -v -E '\\.(js|css|png|jpg|jpeg|gif|ico|woff|woff2|svg|webp)' | sort | uniq -c | sort -rn | head -20`;
+      const topPagesOutput = execSync(topPagesCmd, { encoding: 'utf8' }).trim();
+      stats.topPages = topPagesOutput.split('\n').filter(l => l.trim()).map(line => {
+        const match = line.trim().match(/^(\d+)\s+(.+)$/);
+        if (match) {
+          return { hits: parseInt(match[1]), url: match[2], bytes: 0 };
+        }
+        return null;
+      }).filter(Boolean);
+
+      // Top referrers (excluding self and empty)
+      const topRefCmd = `awk -F'"' '{print $4}' "${logPath}" 2>/dev/null | grep -v -E '^-$|boyvue\\.com|boysreview\\.com|^$' | sort | uniq -c | sort -rn | head -15`;
+      const topRefOutput = execSync(topRefCmd, { encoding: 'utf8' }).trim();
+      stats.topReferrers = topRefOutput.split('\n').filter(l => l.trim()).map(line => {
+        const match = line.trim().match(/^(\d+)\s+(.+)$/);
+        if (match) {
+          return { hits: parseInt(match[1]), referrer: match[2] };
+        }
+        return null;
+      }).filter(Boolean);
+
+      // Bot traffic detection
+      const botPatterns = [
+        { name: 'Googlebot', pattern: 'Googlebot' },
+        { name: 'Bingbot', pattern: 'bingbot' },
+        { name: 'Yandex', pattern: 'YandexBot' },
+        { name: 'Baidu', pattern: 'Baiduspider' },
+        { name: 'DuckDuckBot', pattern: 'DuckDuckBot' },
+        { name: 'Semrush', pattern: 'SemrushBot' },
+        { name: 'Ahrefs', pattern: 'AhrefsBot' },
+        { name: 'Facebook', pattern: 'facebookexternalhit' },
+        { name: 'Twitter', pattern: 'Twitterbot' },
+        { name: 'Other Bots', pattern: 'bot|crawler|spider' }
+      ];
+
+      for (const bot of botPatterns) {
+        try {
+          const botCmd = `grep -i "${bot.pattern}" "${logPath}" 2>/dev/null | wc -l || echo 0`;
+          const count = parseInt(execSync(botCmd, { encoding: 'utf8' }).trim()) || 0;
+          if (count > 0) {
+            stats.botTraffic.push({ name: bot.name, requests: count });
+          }
+        } catch (e) {
+          // Skip this bot
+        }
+      }
+
+      // HTTP status codes
+      const statusCmd = `awk '{print $9}' "${logPath}" 2>/dev/null | grep -E '^[0-9]{3}$' | sort | uniq -c | sort -rn`;
+      const statusOutput = execSync(statusCmd, { encoding: 'utf8' }).trim();
+      const statusLabels = {
+        200: 'OK', 201: 'Created', 204: 'No Content',
+        301: 'Moved Permanently', 302: 'Found', 304: 'Not Modified',
+        400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found',
+        500: 'Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable'
+      };
+      stats.statusCodes = statusOutput.split('\n').filter(l => l.trim()).map(line => {
+        const match = line.trim().match(/^(\d+)\s+(\d+)$/);
+        if (match) {
+          const count = parseInt(match[1]);
+          const code = parseInt(match[2]);
+          return { code, count, label: statusLabels[code] || '' };
+        }
+        return null;
+      }).filter(Boolean);
+
+      // Calculate error count (4xx + 5xx)
+      stats.errorCount = stats.statusCodes
+        .filter(s => s.code >= 400)
+        .reduce((sum, s) => sum + s.count, 0);
+
+      // Recent errors (last 20 4xx/5xx)
+      const errorsCmd = `grep -E '" [45][0-9]{2} ' "${logPath}" 2>/dev/null | tail -20`;
+      const errorsOutput = execSync(errorsCmd, { encoding: 'utf8' }).trim();
+      stats.recentErrors = errorsOutput.split('\n').filter(l => l.trim()).map(line => {
+        // Parse Apache combined log format
+        const match = line.match(/^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (\S+)[^"]*" (\d+) \S+ "[^"]*" "([^"]*)"/);
+        if (match) {
+          return {
+            ip: match[1],
+            time: match[2],
+            method: match[3],
+            url: match[4],
+            status: parseInt(match[5]),
+            userAgent: match[6].substring(0, 100)
+          };
+        }
+        return null;
+      }).filter(Boolean).reverse();
+
+    } catch (cmdErr) {
+      console.error('Error running log commands:', cmdErr.message);
+    }
+
+    res.json({ success: true, stats });
+  } catch (err) {
+    console.error('Apache stats error:', err);
+    res.status(500).json({ success: false, error: 'Failed to parse Apache logs' });
+  }
 });
 
 // Settings file path
@@ -2157,5 +2327,897 @@ router.get('/review-comments/stats', requireAuth, async (req, res) => {
 
 // Mount integrations routes (protected by auth)
 router.use('/integrations', requireAuth, integrationsRouter);
+
+// ============================================
+// KEYWORD VAULT API - Legacy keyword archive
+// ============================================
+
+// Get keyword vault summary
+router.get('/keyword-vault/summary', requireAuth, async (req, res) => {
+  try {
+    const summary = await pool.query(`
+      SELECT
+        COUNT(*) as total_keywords,
+        COUNT(DISTINCT keyword) as unique_keywords,
+        COUNT(CASE WHEN is_target THEN 1 END) as target_keywords,
+        COUNT(CASE WHEN is_ranking THEN 1 END) as ranking_keywords,
+        ROUND(AVG(search_volume)) as avg_volume,
+        COUNT(CASE WHEN position <= 10 THEN 1 END) as page1_keywords,
+        COUNT(CASE WHEN position BETWEEN 11 AND 20 THEN 1 END) as page2_keywords
+      FROM keyword_vault
+    `);
+
+    const bySources = await pool.query(`
+      SELECT source, COUNT(*) as count, ROUND(AVG(search_volume)) as avg_volume
+      FROM keyword_vault
+      GROUP BY source
+      ORDER BY count DESC
+    `);
+
+    const bySite = await pool.query(`
+      SELECT site_context, COUNT(*) as count,
+             COUNT(CASE WHEN is_target THEN 1 END) as targets
+      FROM keyword_vault
+      WHERE site_context IS NOT NULL
+      GROUP BY site_context
+      ORDER BY count DESC
+    `);
+
+    res.json({
+      ...summary.rows[0],
+      by_source: bySources.rows,
+      by_site: bySite.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get keyword vault list with filtering
+router.get('/keyword-vault', requireAuth, async (req, res) => {
+  try {
+    const {
+      source, site, search, is_target, priority,
+      min_volume, max_volume, has_position,
+      sort = 'search_volume', order = 'desc',
+      page = 1, limit = 50
+    } = req.query;
+
+    let where = ['1=1'];
+    const params = [];
+    let paramIndex = 1;
+
+    if (source) {
+      where.push(`source = $${paramIndex++}`);
+      params.push(source);
+    }
+    if (site) {
+      where.push(`site_context ILIKE $${paramIndex++}`);
+      params.push(`%${site}%`);
+    }
+    if (search) {
+      where.push(`keyword ILIKE $${paramIndex++}`);
+      params.push(`%${search}%`);
+    }
+    if (is_target === 'true') {
+      where.push('is_target = true');
+    }
+    if (priority) {
+      where.push(`priority = $${paramIndex++}`);
+      params.push(parseInt(priority));
+    }
+    if (min_volume) {
+      where.push(`search_volume >= $${paramIndex++}`);
+      params.push(parseInt(min_volume));
+    }
+    if (max_volume) {
+      where.push(`search_volume <= $${paramIndex++}`);
+      params.push(parseInt(max_volume));
+    }
+    if (has_position === 'true') {
+      where.push('position IS NOT NULL');
+    }
+
+    const validSorts = ['search_volume', 'position', 'keyword', 'first_seen', 'priority'];
+    const sortCol = validSorts.includes(sort) ? sort : 'search_volume';
+    const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM keyword_vault WHERE ${where.join(' AND ')}`,
+      params
+    );
+
+    const result = await pool.query(
+      `SELECT * FROM keyword_vault
+       WHERE ${where.join(' AND ')}
+       ORDER BY ${sortCol} ${sortOrder} NULLS LAST
+       LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
+      [...params, parseInt(limit), offset]
+    );
+
+    res.json({
+      keywords: result.rows,
+      total: parseInt(countResult.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      pages: Math.ceil(countResult.rows[0].count / parseInt(limit))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update keyword in vault (set priority, target status, notes)
+router.put('/keyword-vault/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_target, priority, notes, tags } = req.body;
+
+    const updates = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (typeof is_target === 'boolean') {
+      updates.push(`is_target = $${paramIndex++}`);
+      params.push(is_target);
+    }
+    if (priority !== undefined) {
+      updates.push(`priority = $${paramIndex++}`);
+      params.push(priority);
+    }
+    if (notes !== undefined) {
+      updates.push(`notes = $${paramIndex++}`);
+      params.push(notes);
+    }
+    if (tags !== undefined) {
+      updates.push(`tags = $${paramIndex++}`);
+      params.push(tags);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No updates provided' });
+    }
+
+    updates.push('last_updated = NOW()');
+    params.push(id);
+
+    await pool.query(
+      `UPDATE keyword_vault SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
+      params
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add new keyword to vault
+router.post('/keyword-vault', requireAuth, async (req, res) => {
+  try {
+    const { keyword, source = 'manual', site_context, search_volume, notes, priority, is_target } = req.body;
+
+    if (!keyword) {
+      return res.status(400).json({ error: 'Keyword is required' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO keyword_vault (keyword, source, site_context, search_volume, notes, priority, is_target)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (keyword, source, site_context) DO UPDATE SET
+         search_volume = COALESCE(EXCLUDED.search_volume, keyword_vault.search_volume),
+         notes = COALESCE(EXCLUDED.notes, keyword_vault.notes),
+         last_updated = NOW()
+       RETURNING *`,
+      [keyword, source, site_context, search_volume, notes, priority || 0, is_target || false]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk import keywords to vault
+router.post('/keyword-vault/bulk', requireAuth, async (req, res) => {
+  try {
+    const { keywords, source = 'manual', site_context } = req.body;
+
+    if (!Array.isArray(keywords) || keywords.length === 0) {
+      return res.status(400).json({ error: 'Keywords array is required' });
+    }
+
+    let imported = 0;
+    for (const kw of keywords) {
+      const keyword = typeof kw === 'string' ? kw : kw.keyword;
+      const volume = typeof kw === 'object' ? kw.search_volume : null;
+
+      try {
+        await pool.query(
+          `INSERT INTO keyword_vault (keyword, source, site_context, search_volume)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (keyword, source, site_context) DO NOTHING`,
+          [keyword, source, site_context, volume]
+        );
+        imported++;
+      } catch (e) {}
+    }
+
+    res.json({ imported, total: keywords.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get SEO metrics for Grafana/charts
+router.get('/seo-metrics', requireAuth, async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+
+    // Current metrics
+    const current = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM keyword_vault WHERE is_target) as target_keywords,
+        (SELECT COUNT(*) FROM keyword_vault WHERE position IS NOT NULL) as ranking_keywords,
+        (SELECT COUNT(*) FROM keyword_vault WHERE position <= 10) as page1_keywords,
+        (SELECT COUNT(*) FROM keyword_vault WHERE position BETWEEN 11 AND 20) as page2_keywords,
+        (SELECT ROUND(AVG(search_volume)) FROM keyword_vault WHERE is_target) as avg_target_volume,
+        (SELECT COUNT(*) FROM seo_website_keywords) as total_tracked
+    `);
+
+    // History
+    const history = await pool.query(`
+      SELECT site, metric_name, metric_value, recorded_at
+      FROM seo_metrics_history
+      WHERE recorded_at > NOW() - INTERVAL '${parseInt(days)} days'
+      ORDER BY recorded_at DESC
+    `);
+
+    // Top opportunities
+    const opportunities = await pool.query(`
+      SELECT keyword, site_context, position, search_volume
+      FROM keyword_vault
+      WHERE position BETWEEN 11 AND 20 AND search_volume > 100
+      ORDER BY search_volume DESC
+      LIMIT 20
+    `);
+
+    res.json({
+      current: current.rows[0],
+      history: history.rows,
+      opportunities: opportunities.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Record SEO metrics (for cron job)
+router.post('/seo-metrics/record', requireAuth, async (req, res) => {
+  try {
+    const sites = ['BoyVue Main', 'BoyVue Pics', 'BoyVue Videos', 'BoyVue Fans', 'BoyVue Adult'];
+
+    for (const site of sites) {
+      // Get metrics for this site
+      const metrics = await pool.query(`
+        SELECT
+          COUNT(*) as total_keywords,
+          COUNT(CASE WHEN position <= 10 THEN 1 END) as page1,
+          COUNT(CASE WHEN position BETWEEN 11 AND 20 THEN 1 END) as page2,
+          ROUND(AVG(search_volume)) as avg_volume
+        FROM keyword_vault
+        WHERE site_context = $1
+      `, [site]);
+
+      const m = metrics.rows[0];
+
+      // Record each metric
+      await pool.query(
+        `INSERT INTO seo_metrics_history (site, metric_name, metric_value) VALUES ($1, 'total_keywords', $2)`,
+        [site, m.total_keywords]
+      );
+      await pool.query(
+        `INSERT INTO seo_metrics_history (site, metric_name, metric_value) VALUES ($1, 'page1_keywords', $2)`,
+        [site, m.page1]
+      );
+      await pool.query(
+        `INSERT INTO seo_metrics_history (site, metric_name, metric_value) VALUES ($1, 'page2_keywords', $2)`,
+        [site, m.page2]
+      );
+    }
+
+    res.json({ success: true, recorded_at: new Date().toISOString() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== PHOTO MANAGEMENT ==========
+
+// Delete a photo
+router.delete('/photo/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get photo info first
+    const photoResult = await pool.query('SELECT * FROM image WHERE id = $1', [id]);
+    if (photoResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Photo not found' });
+    }
+
+    const photo = photoResult.rows[0];
+
+    // Delete files from disk
+    const fs = await import('fs');
+    const path = await import('path');
+    const DATA_DIR = '/var/www/html/bp/data';
+
+    // Delete main file
+    if (photo.local_path) {
+      const filePath = path.join(DATA_DIR, photo.local_path);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Delete thumbnail
+    if (photo.thumbnail_path) {
+      const thumbPath = path.join(DATA_DIR, photo.thumbnail_path);
+      if (fs.existsSync(thumbPath)) {
+        fs.unlinkSync(thumbPath);
+      }
+    }
+
+    // Delete from database
+    await pool.query('DELETE FROM image WHERE id = $1', [id]);
+
+    // Update category count if was approved
+    if (photo.approved !== false && photo.belongs_to_gallery) {
+      await pool.query(
+        'UPDATE category SET photo_count = GREATEST(photo_count - 1, 0) WHERE id = $1',
+        [photo.belongs_to_gallery]
+      );
+    }
+
+    res.json({ success: true, message: 'Photo deleted successfully' });
+  } catch (error) {
+    console.error('Delete photo error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Approve a photo
+router.post('/photo/:id/approve', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'UPDATE image SET approved = true WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Photo not found' });
+    }
+
+    const photo = result.rows[0];
+
+    // Update category photo count
+    if (photo.belongs_to_gallery) {
+      await pool.query(
+        'UPDATE category SET photo_count = photo_count + 1 WHERE id = $1',
+        [photo.belongs_to_gallery]
+      );
+    }
+
+    res.json({ success: true, message: 'Photo approved', photo });
+  } catch (error) {
+    console.error('Approve photo error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Unapprove a photo (flag for review)
+router.post('/photo/:id/unapprove', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'UPDATE image SET approved = false WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Photo not found' });
+    }
+
+    const photo = result.rows[0];
+
+    // Decrease category photo count since it's no longer approved
+    if (photo.belongs_to_gallery) {
+      await pool.query(
+        'UPDATE category SET photo_count = GREATEST(photo_count - 1, 0) WHERE id = $1',
+        [photo.belongs_to_gallery]
+      );
+    }
+
+    res.json({ success: true, message: 'Photo unapproved', photo });
+  } catch (error) {
+    console.error('Unapprove photo error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================================================
+// SEO PAGE SETTINGS (for AdminSEOPage.jsx)
+// ============================================================================
+
+// Get all SEO page settings
+router.get('/seo-pages', requireDbAuth, async (req, res) => {
+  try {
+    // Check if table exists, create if not
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS seo_page_settings (
+        id SERIAL PRIMARY KEY,
+        page_key VARCHAR(100) UNIQUE NOT NULL,
+        page_name VARCHAR(255),
+        title VARCHAR(255),
+        description TEXT,
+        keywords TEXT,
+        og_image VARCHAR(500),
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    const result = await pool.query('SELECT * FROM seo_page_settings ORDER BY page_name');
+    const settings = result.rows.map(row => ({
+      pageKey: row.page_key,
+      pageName: row.page_name,
+      title: row.title,
+      description: row.description,
+      keywords: row.keywords,
+      ogImage: row.og_image,
+      isActive: row.is_active
+    }));
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Get SEO pages error:', error);
+    res.status(500).json({ error: 'Failed to fetch SEO settings' });
+  }
+});
+
+// Create SEO page setting
+router.post('/seo-pages', requireDbAuth, async (req, res) => {
+  try {
+    const { pageKey, pageName, title, description, keywords, ogImage, isActive } = req.body;
+
+    if (!pageKey) {
+      return res.status(400).json({ error: 'Page key is required' });
+    }
+
+    await pool.query(`
+      INSERT INTO seo_page_settings (page_key, page_name, title, description, keywords, og_image, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [pageKey, pageName, title, description, keywords, ogImage, isActive !== false]);
+
+    res.json({ success: true, message: 'SEO setting created' });
+  } catch (error) {
+    console.error('Create SEO page error:', error);
+    res.status(500).json({ error: 'Failed to create SEO setting' });
+  }
+});
+
+// Update SEO page setting
+router.put('/seo-pages/:pageKey', requireDbAuth, async (req, res) => {
+  try {
+    const { pageKey } = req.params;
+    const { pageName, title, description, keywords, ogImage, isActive } = req.body;
+
+    await pool.query(`
+      UPDATE seo_page_settings
+      SET page_name = $1, title = $2, description = $3, keywords = $4, og_image = $5, is_active = $6, updated_at = NOW()
+      WHERE page_key = $7
+    `, [pageName, title, description, keywords, ogImage, isActive, pageKey]);
+
+    res.json({ success: true, message: 'SEO setting updated' });
+  } catch (error) {
+    console.error('Update SEO page error:', error);
+    res.status(500).json({ error: 'Failed to update SEO setting' });
+  }
+});
+
+// Delete SEO page setting
+router.delete('/seo-pages/:pageKey', requireDbAuth, async (req, res) => {
+  try {
+    const { pageKey } = req.params;
+    await pool.query('DELETE FROM seo_page_settings WHERE page_key = $1', [pageKey]);
+    res.json({ success: true, message: 'SEO setting deleted' });
+  } catch (error) {
+    console.error('Delete SEO page error:', error);
+    res.status(500).json({ error: 'Failed to delete SEO setting' });
+  }
+});
+
+// ============================================================================
+// INTERNAL SEO SETTINGS (for comprehensive SEO management)
+// ============================================================================
+
+// Get internal SEO settings
+router.get('/internal-seo', requireAuth, async (req, res) => {
+  try {
+    // Create table if not exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS internal_seo_settings (
+        id SERIAL PRIMARY KEY,
+        setting_key VARCHAR(100) UNIQUE NOT NULL,
+        setting_value JSONB,
+        description TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    const result = await pool.query('SELECT * FROM internal_seo_settings ORDER BY setting_key');
+
+    // Return settings as key-value map
+    const settings = {};
+    result.rows.forEach(row => {
+      settings[row.setting_key] = row.setting_value;
+    });
+
+    // Return defaults if empty
+    if (Object.keys(settings).length === 0) {
+      return res.json({
+        success: true,
+        settings: {
+          gscKeywords: ['nude twinks', 'gay boys', 'boys nude', 'nude teen boys 18+', 'gay twink photos', 'twink galleries'],
+          internalLinks: {
+            sites: { url: '/sites', title: 'All Sites', seoAlt: 'Browse all gay twink photo sites' },
+            journey: { url: '/journey', title: 'Discover', seoAlt: 'Discover trending nude twink content' },
+            hotornot: { url: '/hotornot.php', title: 'Hot or Not', seoAlt: 'Rate gay twink photos' },
+            videos: { url: '/gallery/gay+videos/', title: 'Videos', seoAlt: 'Watch free gay twink videos' },
+            models: { url: '/models', title: 'Models', seoAlt: 'Browse gay twink models' }
+          },
+          altTagTemplates: {
+            photo: '{title} from {site} - {keyword}',
+            video: '{title} - {site} nude twink video',
+            gallery: '{site} - nude twink photos and gay boy galleries',
+            model: '{name} nude photos from {site}'
+          },
+          navigationTitles: {
+            prev: 'Previous: {title}',
+            next: 'Next: {title}',
+            backToGallery: 'Back to {gallery}'
+          },
+          breadcrumbTitles: {
+            home: 'BoyVue - Free Gay Twink Photos',
+            sites: 'Browse All Gay Twink Sites',
+            gallery: '{site} - Nude Twink Gallery',
+            photo: '{title} - {site}'
+          }
+        }
+      });
+    }
+
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Get internal SEO settings error:', error);
+    res.status(500).json({ error: 'Failed to fetch internal SEO settings' });
+  }
+});
+
+// Save internal SEO settings
+router.post('/internal-seo', requireAuth, async (req, res) => {
+  try {
+    const { settings } = req.body;
+
+    if (!settings || typeof settings !== 'object') {
+      return res.status(400).json({ error: 'Settings object required' });
+    }
+
+    // Ensure table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS internal_seo_settings (
+        id SERIAL PRIMARY KEY,
+        setting_key VARCHAR(100) UNIQUE NOT NULL,
+        setting_value JSONB,
+        description TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Upsert each setting
+    for (const [key, value] of Object.entries(settings)) {
+      await pool.query(`
+        INSERT INTO internal_seo_settings (setting_key, setting_value, updated_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (setting_key) DO UPDATE SET
+          setting_value = EXCLUDED.setting_value,
+          updated_at = NOW()
+      `, [key, JSON.stringify(value)]);
+    }
+
+    res.json({ success: true, message: 'Internal SEO settings saved' });
+  } catch (error) {
+    console.error('Save internal SEO settings error:', error);
+    res.status(500).json({ error: 'Failed to save internal SEO settings' });
+  }
+});
+
+// Get internal SEO keywords from GSC
+router.get('/internal-seo/keywords', requireAuth, async (req, res) => {
+  try {
+    // Get keywords from seo_website_keywords table
+    const result = await pool.query(`
+      SELECT DISTINCT LOWER(keyword) as keyword, SUM(search_volume) as volume
+      FROM seo_website_keywords
+      WHERE keyword IS NOT NULL AND keyword != ''
+      GROUP BY LOWER(keyword)
+      ORDER BY volume DESC NULLS LAST
+      LIMIT 100
+    `);
+
+    res.json({
+      success: true,
+      keywords: result.rows.map(r => ({ keyword: r.keyword, volume: parseInt(r.volume) || 0 }))
+    });
+  } catch (error) {
+    console.error('Get SEO keywords error:', error);
+    res.status(500).json({ error: 'Failed to fetch keywords' });
+  }
+});
+
+// Get all internal links with SEO data
+router.get('/internal-seo/links', requireAuth, async (req, res) => {
+  try {
+    // Get category counts for internal link suggestions
+    const categories = await pool.query(`
+      SELECT c.id, c.catname, COUNT(i.id) as photo_count
+      FROM category c
+      LEFT JOIN image i ON i.belongs_to_gallery = c.id
+      GROUP BY c.id, c.catname
+      HAVING COUNT(i.id) > 10
+      ORDER BY COUNT(i.id) DESC
+      LIMIT 50
+    `);
+
+    const links = categories.rows.map(cat => ({
+      url: `/gallery/${cat.catname.toLowerCase().replace(/\s+/g, '-')}/`,
+      title: cat.catname,
+      photoCount: parseInt(cat.photo_count),
+      seoAlt: `${cat.catname} - nude twink photos and gay boy galleries`,
+      seoTitle: `${cat.catname} - Free Gay Twink Photos`
+    }));
+
+    res.json({ success: true, links });
+  } catch (error) {
+    console.error('Get internal links error:', error);
+    res.status(500).json({ error: 'Failed to fetch internal links' });
+  }
+});
+
+// Update banner SEO from admin
+router.put('/internal-seo/banner/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { seoAlt, seoTitle, seoKeywords } = req.body;
+
+    await pool.query(`
+      UPDATE banners SET
+        seo_alt = COALESCE($1, seo_alt),
+        seo_title = COALESCE($2, seo_title),
+        seo_keywords = COALESCE($3, seo_keywords),
+        updated_at = NOW()
+      WHERE id = $4
+    `, [seoAlt, seoTitle, seoKeywords, id]);
+
+    res.json({ success: true, message: 'Banner SEO updated' });
+  } catch (error) {
+    console.error('Update banner SEO error:', error);
+    res.status(500).json({ error: 'Failed to update banner SEO' });
+  }
+});
+
+// Get all banners with SEO data for admin
+router.get('/internal-seo/banners', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, site_name, banner_url, affiliate_url, best_seller,
+             seo_alt, seo_title, seo_keywords, is_active, click_count
+      FROM banners
+      ORDER BY best_seller DESC, site_name
+    `);
+
+    res.json({ success: true, banners: result.rows });
+  } catch (error) {
+    console.error('Get banners error:', error);
+    res.status(500).json({ error: 'Failed to fetch banners' });
+  }
+});
+
+// ============================================================================
+// ADMIN USER MANAGEMENT
+// ============================================================================
+
+// Database-backed auth middleware for user management
+async function requireDbAuth(req, res, next) {
+  const sessionId = req.cookies?.admin_session;
+  if (!sessionId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const session = await getAdminSession(sessionId);
+  if (!session) {
+    return res.status(401).json({ error: 'Invalid session' });
+  }
+  req.adminSession = session;
+  req.isAdmin = session.roles?.includes('super_admin') || session.roles?.includes('admin');
+  if (!req.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+}
+
+// Get all admin users
+router.get('/users', requireDbAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.username, u.email, u.is_active, u.created_at, u.last_login,
+        ARRAY_AGG(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL) as roles
+      FROM admin_users u
+      LEFT JOIN admin_user_roles ur ON u.id = ur.user_id
+      LEFT JOIN admin_roles r ON ur.role_id = r.id
+      GROUP BY u.id
+      ORDER BY u.created_at DESC
+    `);
+    res.json({ success: true, users: result.rows });
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Get all roles
+router.get('/roles', requireDbAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT r.id, r.name, r.description,
+        ARRAY_AGG(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL) as permissions
+      FROM admin_roles r
+      LEFT JOIN admin_role_permissions rp ON r.id = rp.role_id
+      LEFT JOIN admin_permissions p ON rp.permission_id = p.id
+      GROUP BY r.id
+      ORDER BY r.id
+    `);
+    res.json({ success: true, roles: result.rows });
+  } catch (error) {
+    console.error('Get roles error:', error);
+    res.status(500).json({ error: 'Failed to fetch roles' });
+  }
+});
+
+// Create new admin user
+router.post('/users', requireDbAuth, async (req, res) => {
+  try {
+    const { username, email, password, roles } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+
+    // Check if username exists
+    const existing = await pool.query('SELECT id FROM admin_users WHERE username = $1', [username]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create user
+    const userResult = await pool.query(`
+      INSERT INTO admin_users (username, email, password_hash)
+      VALUES ($1, $2, $3)
+      RETURNING id, username, email, is_active, created_at
+    `, [username, email || null, passwordHash]);
+
+    const user = userResult.rows[0];
+
+    // Assign roles
+    if (roles && roles.length > 0) {
+      for (const roleName of roles) {
+        await pool.query(`
+          INSERT INTO admin_user_roles (user_id, role_id)
+          SELECT $1, id FROM admin_roles WHERE name = $2
+          ON CONFLICT DO NOTHING
+        `, [user.id, roleName]);
+      }
+    }
+
+    res.json({ success: true, user, message: 'User created successfully' });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Update admin user
+router.put('/users/:id', requireDbAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, email, password, is_active, roles } = req.body;
+
+    // Build update query
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (username) {
+      updates.push(`username = $${paramCount++}`);
+      values.push(username);
+    }
+    if (email !== undefined) {
+      updates.push(`email = $${paramCount++}`);
+      values.push(email || null);
+    }
+    if (password) {
+      const passwordHash = await bcrypt.hash(password, 10);
+      updates.push(`password_hash = $${paramCount++}`);
+      values.push(passwordHash);
+    }
+    if (is_active !== undefined) {
+      updates.push(`is_active = $${paramCount++}`);
+      values.push(is_active);
+    }
+
+    if (updates.length > 0) {
+      updates.push(`updated_at = NOW()`);
+      values.push(id);
+      await pool.query(
+        `UPDATE admin_users SET ${updates.join(', ')} WHERE id = $${paramCount}`,
+        values
+      );
+    }
+
+    // Update roles if provided
+    if (roles !== undefined) {
+      // Remove existing roles
+      await pool.query('DELETE FROM admin_user_roles WHERE user_id = $1', [id]);
+      // Add new roles
+      for (const roleName of roles) {
+        await pool.query(`
+          INSERT INTO admin_user_roles (user_id, role_id)
+          SELECT $1, id FROM admin_roles WHERE name = $2
+          ON CONFLICT DO NOTHING
+        `, [id, roleName]);
+      }
+    }
+
+    res.json({ success: true, message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Delete admin user
+router.delete('/users/:id', requireDbAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent deleting yourself
+    if (req.adminSession.user_id === parseInt(id)) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    await pool.query('DELETE FROM admin_users WHERE id = $1', [id]);
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
 
 export default router;
